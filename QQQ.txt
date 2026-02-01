@@ -1,21 +1,25 @@
-# Essential global settings (customize ports/secrets)
+# 基础设置
 mixed-port: 7890
-socks-port: 7891
-redir-port: 7892
-tproxy-port: 7895
 allow-lan: false
 mode: rule
 log-level: info
-external-controller: 127.0.0.1:9090
-secret: ""
-
 ipv6: false
+external-controller: 0.0.0.0:9090
 
-# 1. 节点列表 (Proxies) - 单节点 (IP → 域名)
+# DNS 配置 (手机端稳定运行的关键)
+dns:
+  enable: true
+  ipv6: false
+  enhanced-mode: redir-host # 或 fake-ip
+  nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+
+# 1. 节点列表
 proxies:
   - name: "QQQ-vless-reality-vision"
     type: vless
-    server: do.venus.ccwu.cc  # 已换成域名
+    server: do.venus.ccwu.cc
     port: 17427
     uuid: e4b8a9e2-b0eb-4c82-a009-72931bc7ebf1
     network: tcp
@@ -28,39 +32,33 @@ proxies:
       public-key: eFIMMQMxtJATXaopYuXe9vbpqc-GYSgDp1JupfscqRM
       short-id: 08aed333
 
-# 2. 策略组 (Proxy Groups)
+# 2. 策略组
 proxy-groups:
   - name: Proxy
     type: select
     proxies:
       - QQQ-vless-reality-vision
-
-  - name: "直连"
-    type: select
-    proxies:
       - DIRECT
 
-# 3. 规则 (Rules) - 不变
+# 3. 规则
 rules:
-  # AI服务强制走Proxy组
+  # AI服务
   - DOMAIN-SUFFIX,perplexity.ai,Proxy
-  - DOMAIN-SUFFIX,pplx-api,Proxy
-  - DOMAIN-KEYWORD,perplexity,Proxy
   - DOMAIN-SUFFIX,openai.com,Proxy
   - DOMAIN-SUFFIX,chatgpt.com,Proxy
-
-  # SAVO/国内直连
+  - DOMAIN-KEYWORD,perplexity,Proxy
+  
+  # 常用直连
   - DOMAIN-SUFFIX,savo.xyz,DIRECT
   - DOMAIN-SUFFIX,qq.com,DIRECT
-  - DOMAIN-SUFFIX,azure.cn,DIRECT
+  - DOMAIN-SUFFIX,baidu.com,DIRECT
   - DOMAIN-SUFFIX,microsoft.com,DIRECT
-
-  # 本地直连
-  - IP-CIDR,0.0.0.0/8,DIRECT
-  - IP-CIDR,10.0.0.0/8,DIRECT
+  
+  # 内网直连
   - IP-CIDR,127.0.0.0/8,DIRECT
   - IP-CIDR,172.16.0.0/12,DIRECT
   - IP-CIDR,192.168.0.0/16,DIRECT
-
-  # 兜底：Proxy组
+  - IP-CIDR,10.0.0.0/8,DIRECT
+  
+  # 兜底
   - MATCH,Proxy
