@@ -116,10 +116,10 @@
                                     <div v-for="(url, name) in links" :key="name" class="flex items-center gap-3 group/link">
                                         <input type="text" :value="name" @change="renameLink(userId, groupName, name, $event.target.value)" class="w-1/3 bg-slate-900 border border-slate-800 rounded px-3 py-1 text-xs text-slate-200">
                                         
-                                        <a :href="config[userId][groupName][name]" target="_blank" class="text-slate-500 hover:text-primary cursor-pointer transition-colors flex items-center justify-center shrink-0 w-10" title="Go to link">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-5">
-                                                <line x1="2" y1="12" x2="22" y2="12"></line>
-                                                <polyline points="15 5 22 12 15 19"></polyline>
+                                       <a :href="config[userId][groupName][name]" target="_blank" class="text-slate-500 hover:text-primary cursor-pointer transition-colors flex items-center w-auto mx-0" title="Go to link">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-5">
+                                                <line x1="1" y1="12" x2="23" y2="12"></line>
+                                                <polyline points="16 5 23 12 16 19"></polyline>
                                             </svg>
                                         </a>
 
@@ -223,4 +223,5 @@
     </script>
 </body>
 </html>
+
 
