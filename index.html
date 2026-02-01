@@ -99,8 +99,7 @@
                                     </svg>
                                     <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M5 13l4 4L19 7" stroke-width="2"/></svg>
                                 </button>
-                                <button @click="deleteUser(userId)" class="text-slate-600 hover:text-red-400title="Go to link">➜
-                                    p-2"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2"/></svg></button>
+                                <button @click="deleteUser(userId)" class="text-slate-600 hover:text-red-400 p-2"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2"/></svg></button>
                             </div>
                         </div>
 
@@ -116,13 +115,14 @@
                                 <div class="space-y-2 pl-3">
                                     <div v-for="(url, name) in links" :key="name" class="flex items-center gap-3 group/link">
                                         <input type="text" :value="name" @change="renameLink(userId, groupName, name, $event.target.value)" class="w-1/3 bg-slate-900 border border-slate-800 rounded px-3 py-1 text-xs text-slate-200">
-                                     <a :href="config[userId][groupName][name]" target="_blank" class="text-slate-500 hover:text-primary cursor-pointer px-2 transition-colors flex items-center shrink-0" title="Go to link">
+                                        
+                                        <a :href="config[userId][groupName][name]" target="_blank" class="text-slate-500 hover:text-primary cursor-pointer px-2 transition-colors flex items-center shrink-0" title="Go to link">
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-12 h-5">
                                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                                 <polyline points="12 5 19 12 12 19"></polyline>
                                             </svg>
                                         </a>
-                                        
+
                                         <input type="text" v-model="config[userId][groupName][name]" class="flex-1 bg-slate-900 border border-slate-800 rounded px-3 py-1 text-xs font-mono text-primary">
                                         
                                         <button @click="deleteLink(userId, groupName, name)" class="text-slate-600 hover:text-red-400 opacity-0 group-hover/link:opacity-100">×</button>
@@ -223,5 +223,3 @@
     </script>
 </body>
 </html>
-
-
