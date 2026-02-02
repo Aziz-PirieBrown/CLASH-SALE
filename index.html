@@ -47,7 +47,7 @@
         <div v-cloak v-if="Object.keys(config).length > 0" class="flex flex-wrap gap-2 mb-8 bg-slate-900/40 p-3 rounded-xl border border-border/50">
             <div v-for="(val, userId) in config" :key="'nav-'+userId" @click="scrollToUser(userId)"
                  class="px-3 py-1.5 bg-slate-800 hover:bg-primary/20 border border-slate-700 hover:border-primary rounded-md cursor-pointer transition-all text-xs sm:text-sm font-mono text-slate-300">
-                #{{ userId }}
+                {{ userId }}
             </div>
         </div>
 
@@ -100,7 +100,7 @@
                                 </div>
                             </div>
                             <div class="space-y-2">
-                                <div v-for="(url, name) in links" :key="name" class="flex items-center gap-1">
+                                <div v-for="(url, name) in links" :key="name" class="flex items-center gap-1 group/link">
                                     <input type="text" :value="name" @change="renameLink(userId, groupName, name, $event.target.value)" 
                                            class="w-20 sm:w-1/4 shrink-0 bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 outline-none focus:border-primary"
                                            style="min-width: 90px;">
@@ -203,7 +203,6 @@
 
                 const copyLink = (uid) => {
                     const url = getJumpUrl(uid);
-                    // 手机端兼容性复制
                     if (navigator.clipboard && window.isSecureContext) {
                         navigator.clipboard.writeText(url).then(() => showFeedback(uid)).catch(() => fallbackCopy(url, uid));
                     } else {
