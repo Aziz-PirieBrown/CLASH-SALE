@@ -1,64 +1,27 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>安全加载中...</title>
+    <script>
+        // 1. 抢在页面渲染前执行逻辑
+        (function() {
+            const id = new URLSearchParams(window.location.search).get('id');
+            if (!id) { window.location.replace("./index.html"); return; }
+
+            const key = "__AZURE_KEY__";
+            // 2. 直接构造后端地址
+            const target = `https://forever302free-h0d9bvemhaaffzhk.southeastasia-01.azurewebsites.net/go?code=${key}&id=${id}`;
+
+            // 3. 极致加速：不再 fetch 探测，直接利用浏览器的重定向处理
+            // 这种方式不需要等待后端返回 JSON，后端返回 302 时浏览器会瞬间跟进
+            window.location.replace(target);
+        })();
+    </script>
+    <title>Loading...</title>
     <style>
-        body { background: #0f172a; color: #e2e8f0; font-family: -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { text-align: center; }
-        .loader { border: 3px solid #1e293b; border-top: 3px solid #38bdf8; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto 15px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .text { font-size: 14px; letter-spacing: 1px; opacity: 0.8; }
+        /* 仅保留最基础背景色，防止闪白眼 */
+        body { background: #0f172a; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="loader"></div>
-        <div class="text">正在建立安全连接...</div>
-    </div>
-
-    <script>
-        async function doRedirect() {
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
-
-            // 1. 如果没有 ID，直接返回主管理页
-            if (!id) {
-                window.location.replace("./index.html");
-                return;
-            }
-
-            // 2. 配置信息 (__AZURE_KEY__ 会由 GitHub Actions 自动替换)
-            const CONFIG = {
-                key: "__AZURE_KEY__",
-                endpoint: "https://forever302free-h0d9bvemhaaffzhk.southeastasia-01.azurewebsites.net/go"
-            };
-
-            const targetApi = `${CONFIG.endpoint}?code=${CONFIG.key}&id=${id}`;
-
-            try {
-                // 3. 尝试使用 fetch 获取跳转地址 (受 CORS 限制)
-                const response = await fetch(targetApi);
-                
-                if (response.ok) {
-                    // 如果跨域允许且获取成功，直接替换地址
-                    window.location.replace(response.url);
-                } else if (response.status === 404) {
-                    document.querySelector('.text').innerText = "未找到该配置 ID";
-                } else {
-                    // 其他错误（如 401），尝试暴力跳转
-                    window.location.replace(targetApi);
-                }
-            } catch (err) {
-                // 4. ✨ 核心保险：如果发生跨域错误 (CORS Error)
-                // 浏览器会拦截 fetch 但不会阻止 replace。我们直接让浏览器带地址跳转。
-                console.warn("Fetch blocked by CORS, switching to direct redirect.");
-                window.location.replace(targetApi);
-            }
-        }
-
-        doRedirect();
-    </script>
-</body>
+<body></body>
 </html>
