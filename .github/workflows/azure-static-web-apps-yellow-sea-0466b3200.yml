@@ -8,18 +8,18 @@ on:
     types: [opened, synchronize, reopened, closed]
     branches:
       - main
-  # ✨ 每 10 分钟自动运行一次，防止后端 Function 冷启动延迟
+  # ✨ 每 10 分钟自动运行一次，彻底解决 Azure Function 免费版的冷启动延迟
   schedule:
     - cron: '*/10 * * * *'
 
 jobs:
-  # 任务 1：冷启动保活任务
+  # 任务 1：保活任务 (心跳检测)
   keep_alive:
     runs-on: ubuntu-latest
     steps:
       - name: Heartbeat to Azure Function
         run: |
-          # 这里的 URL 必须是你后端的真实地址
+          # 模拟一次获取操作，让后端保持热启动
           curl -s "https://forever302free-h0d9bvemhaaffzhk.southeastasia-01.azurewebsites.net/api/go?code=${{ secrets.AZURE_FUNCTION_KEY }}&action=get" > /dev/null
           echo "Heartbeat sent at $(date)"
 
@@ -37,16 +37,12 @@ jobs:
           submodules: true
           lfs: false
 
-      # ✨ 核心修正：同时处理 index.html 和 go.html 的 Key 注入
+      # ✨ 避坑核心：在上传前，将两个 HTML 里的占位符全部替换为 GitHub Secrets 里的真实 Key
       - name: Inject Secret Key into HTML Files
         run: |
-          if [ -f "index.html" ]; then
-            sed -i "s/__AZURE_KEY__/${{ secrets.AZURE_FUNCTION_KEY }}/g" index.html
-          fi
-          if [ -f "go.html" ]; then
-            sed -i "s/__AZURE_KEY__/${{ secrets.AZURE_FUNCTION_KEY }}/g" go.html
-          fi
-          echo "Secret Key successfully injected into all HTML files."
+          [ -f "index.html" ] && sed -i "s/__AZURE_KEY__/${{ secrets.AZURE_FUNCTION_KEY }}/g" index.html
+          [ -f "go.html" ] && sed -i "s/__AZURE_KEY__/${{ secrets.AZURE_FUNCTION_KEY }}/g" go.html
+          echo "Secret Key injection complete."
 
       - name: Install OIDC Client
         run: npm install @actions/core@1.6.0 @actions/http-client
@@ -64,15 +60,17 @@ jobs:
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
+          # 这里的 Token 必须与你 Azure 门户中提供的 Deployment Token 一致
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_SEA_0466B3200 }}
           action: "upload"
           app_location: "/" 
           api_location: "" 
           output_location: "" 
+          # ✨ 关键：静态页面不需要编译，跳过构建可以大幅提升部署速度并防止报错
           skip_app_build: true      
           github_id_token: ${{ steps.idtoken.outputs.result }}
 
-  # 任务 3：关闭 PR 时清理环境
+  # 任务 3：清理任务
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
