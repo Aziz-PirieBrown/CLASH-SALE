@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>安全加载中...</title>
+    <style>
+        body { background: #0f172a; color: #e2e8f0; font-family: -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { text-align: center; }
+        .loader { border: 3px solid #1e293b; border-top: 3px solid #38bdf8; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .text { font-size: 14px; letter-spacing: 1px; opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="loader"></div>
+        <div class="text">正在建立安全连接...</div>
+    </div>
+
+    <script>
+        async function doRedirect() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+
+            // 1. 如果没有 ID，直接返回主管理页
+            if (!id) {
+                window.location.replace("./index.html");
+                return;
+            }
+
+            // 2. 配置信息 (部署时 __AZURE_KEY__ 会被自动替换)
+            const CONFIG = {
+                key: "__AZURE_KEY__",
+                endpoint: "https://forever302free-h0d9bvemhaaffzhk.southeastasia-01.azurewebsites.net/api/go"
+            };
+
+            const targetApi = `${CONFIG.endpoint}?code=${CONFIG.key}&id=${id}`;
+
+            try {
+                // 3. 尝试使用 fetch 探测最终跳转地址
+                // 这能保证中间过程对用户透明，且处理重定向
+                const response = await fetch(targetApi);
+                
+                if (response.ok) {
+                    // 成功获取，替换当前页面地址
+                    window.location.replace(response.url);
+                } else {
+                    document.querySelector('.text').innerText = "未找到该配置 ID";
+                }
+            } catch (err) {
+                // 4. 如果发生跨域错误或其他异常，直接强制跳转
+                console.warn("Fetch failed, forcing direct redirect.");
+                window.location.replace(targetApi);
+            }
+        }
+
+        // 页面执行
+        doRedirect();
+    </script>
+</body>
+</html>
