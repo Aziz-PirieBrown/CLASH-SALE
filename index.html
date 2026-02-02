@@ -65,7 +65,7 @@
             <div class="lg:col-span-8 space-y-6">
                 <div v-for="(userGroups, userId) in config" :key="userId" :id="'user-'+userId" class="bg-card border border-border rounded-xl p-6 shadow-lg relative transition-all mb-6">
                     
-                    <div class="flex flex-col gap-3 mb-6 pb-4 border-b border-white/5">
+                    <div class="flex flex-col gap-3 mb-6">
                         <div class="flex items-center justify-between w-full">
                             <div class="flex items-center gap-3 overflow-hidden">
                                 <div class="w-10 h-10 shrink-0 rounded bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-primary text-sm uppercase shadow-inner">
@@ -80,7 +80,7 @@
                         
                         <div class="flex items-center justify-center gap-2 py-1">
                             <a :href="getJumpUrl(userId)" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 transition-colors truncate">🔗 ?id={{ userId }}</a>
-                            <button @click="copyLink(userId)" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 shrink-0 px-2" title="Copy Link">
+                            <button @click="copyLink(userId)" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 shrink-0 px-2">
                                 <svg class="w-4 h-4" :class="{'text-green-400': copyStatus[userId]}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path v-if="!copyStatus[userId]" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                     <path v-else d="M5 13l4 4L19 7" />
@@ -95,28 +95,28 @@
                             <div class="flex justify-between items-center mb-3 border-b border-white/5 pb-2">
                                 <input type="text" :value="groupName" @change="renameGroup(userId, groupName, $event.target.value)" class="bg-transparent text-xs font-bold text-slate-400 uppercase w-1/2 outline-none focus:text-primary transition-colors">
                                 <div class="flex items-center gap-2">
-                                    <button @click="addLink(userId, groupName)" class="text-[10px] bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-slate-400 hover:text-white transition-all">+ LINK</button>
+                                    <button @click="addLink(userId, groupName)" :disabled="Object.keys(links).length >= 10" class="text-[10px] bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-slate-400 hover:text-white transition-all disabled:opacity-30">
+                                        {{ Object.keys(links).length >= 10 ? 'MAX' : '+ LINK' }}
+                                    </button>
                                     <button @click="deleteGroup(userId, groupName)" class="text-slate-600 hover:text-red-400 px-1 font-bold">×</button>
                                 </div>
                             </div>
                             <div class="space-y-2">
-                                <div v-for="(url, name) in links" :key="name" class="flex items-center gap-1 group/link">
+                                <div v-for="(url, name) in links" :key="name" class="flex items-center gap-1">
                                     <input type="text" :value="name" @change="renameLink(userId, groupName, name, $event.target.value)" 
                                            class="w-20 sm:w-1/4 shrink-0 bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 outline-none focus:border-primary"
                                            style="min-width: 90px;">
-                                    
                                     <a :href="config[userId][groupName][name]" target="_blank" class="text-slate-500 hover:text-primary flex items-center shrink-0 w-8 justify-center transition-colors">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-full h-4">
-                                            <line x1="2" y1="12" x2="22" y2="12"/><polyline points="15 5 22 12 15 19"/>
-                                        </svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-full h-4"><line x1="2" y1="12" x2="22" y2="12"/><polyline points="15 5 22 12 15 19"/></svg>
                                     </a>
-
                                     <input type="text" v-model="config[userId][groupName][name]" class="flex-1 min-w-0 bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs font-mono text-primary truncate outline-none focus:border-primary">
                                     <button @click="deleteLink(userId, groupName, name)" class="text-slate-600 hover:text-red-400 px-1 shrink-0 font-bold">×</button>
                                 </div>
                             </div>
                         </div>
-                        <button @click="addGroup(userId)" class="w-full py-2 border border-dashed border-slate-700 text-slate-500 hover:text-primary hover:border-primary rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all">+ New Group</button>
+                        <button @click="addGroup(userId)" :disabled="Object.keys(userGroups).length >= 10" class="w-full py-2 border border-dashed border-slate-700 text-slate-500 hover:text-primary hover:border-primary rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-30">
+                            {{ Object.keys(userGroups).length >= 10 ? 'MAX GROUPS REACHED' : '+ New Group' }}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -147,30 +147,10 @@
                 const copyStatus = ref({});
                 let timer = null;
 
-                const cleanupConfig = (data) => {
-                    const cleanData = JSON.parse(JSON.stringify(data));
-                    for (const userId in cleanData) {
-                        const userGroups = cleanData[userId];
-                        for (const groupName in userGroups) {
-                            const links = userGroups[groupName];
-                            for (const linkName in links) {
-                                const url = links[linkName].trim();
-                                if (!url || url === 'http://' || url === 'https://' || url === 'http' || url === 'https') {
-                                    delete links[linkName];
-                                }
-                            }
-                            if (Object.keys(links).length === 0) delete userGroups[groupName];
-                        }
-                        if (Object.keys(userGroups).length === 0) delete cleanData[userId];
-                    }
-                    return cleanData;
-                };
-
                 const fetchConfig = async () => {
                     try {
                         const res = await fetch(`${SERVICE_URL}&action=get`);
-                        const rawData = await res.json() || {};
-                        config.value = cleanupConfig(rawData);
+                        config.value = await res.json() || {};
                         statusText.value = 'Synced'; statusColor.value = 'bg-green-400';
                     } catch (e) { statusText.value = 'Connect Error'; statusColor.value = 'bg-red-500'; }
                 };
@@ -187,44 +167,48 @@
                     } catch (e) { statusText.value = 'Save Error'; } finally { isSaving.value = false; }
                 };
 
-                const addUser = () => { if (newUserId.value && !config.value[newUserId.value]) { config.value[newUserId.value] = { 'root': { 'New Link': 'http://' } }; newUserId.value = ''; } };
+                const addUser = () => { if (newUserId.value && !config.value[newUserId.value]) { config.value[newUserId.value] = { 'root': { 'New Link': 'https://' } }; newUserId.value = ''; } };
                 const deleteUser = (id) => { if(confirm('Delete user '+id+'?')) delete config.value[id]; };
-                const addGroup = (id) => { config.value[id]['Group ' + (Object.keys(config.value[id]).length + 1)] = { 'Link': 'http://' }; };
+                
+                // 修复：确保新建 Group 的响应式生效
+                const addGroup = (id) => { 
+                    if (Object.keys(config.value[id]).length < 10) {
+                        const name = 'Group ' + (Object.keys(config.value[id]).length + 1);
+                        config.value[id] = { ...config.value[id], [name]: { 'Link': 'https://' } };
+                    }
+                };
+
                 const deleteGroup = (id, gn) => { if(confirm('Delete group '+gn+'?')) delete config.value[id][gn]; };
-                const addLink = (id, gn) => { config.value[id][gn]['New Link'] = 'http://'; };
+                
+                const addLink = (id, gn) => { 
+                    if (Object.keys(config.value[id][gn]).length < 10) {
+                        config.value[id][gn]['New Link ' + (Object.keys(config.value[id][gn]).length + 1)] = 'https://';
+                    }
+                };
+
                 const deleteLink = (id, gn, ln) => { delete config.value[id][gn][ln]; };
                 const renameUser = (o, n) => { if(n && !config.value[n]) { config.value[n] = config.value[o]; delete config.value[o]; }};
                 const renameGroup = (id, o, n) => { if(n && !config.value[id][n]) { config.value[id][n] = config.value[id][o]; delete config.value[id][o]; }};
                 const renameLink = (id, gn, o, n) => { if(n && !config.value[id][gn][n]) { config.value[id][gn][n] = config.value[id][gn][o]; delete config.value[id][gn][o]; }};
                 
-                const getJumpUrl = (uid) => {
-                    return `https://forever302free-h0d9bvemhaaffzhk.southeastasia-01.azurewebsites.net/go?id=${uid}`;
-                };
+                const getJumpUrl = (uid) => `https://forever302free-h0d9bvemhaaffzhk.southeastasia-01.azurewebsites.net/go?id=${uid}`;
 
                 const copyLink = (uid) => {
                     const url = getJumpUrl(uid);
                     if (navigator.clipboard && window.isSecureContext) {
                         navigator.clipboard.writeText(url).then(() => showFeedback(uid)).catch(() => fallbackCopy(url, uid));
-                    } else {
-                        fallbackCopy(url, uid);
-                    }
+                    } else { fallbackCopy(url, uid); }
                 };
 
                 const fallbackCopy = (text, uid) => {
-                    const area = document.createElement("textarea");
-                    area.value = text;
-                    area.style.position = "fixed"; area.style.left = "-9999px"; area.style.top = "0";
-                    document.body.appendChild(area);
-                    area.focus(); area.select();
+                    const area = document.createElement("textarea"); area.value = text;
+                    area.style.position = "fixed"; area.style.left = "-9999px";
+                    document.body.appendChild(area); area.focus(); area.select();
                     try { if (document.execCommand('copy')) showFeedback(uid); } catch (e) {}
                     document.body.removeChild(area);
                 };
 
-                const showFeedback = (uid) => {
-                    copyStatus.value[uid] = true;
-                    setTimeout(() => copyStatus.value[uid] = false, 2000);
-                };
-
+                const showFeedback = (uid) => { copyStatus.value[uid] = true; setTimeout(() => copyStatus.value[uid] = false, 2000); };
                 const scrollToUser = (id) => { const el = document.getElementById('user-' + id); if (el) window.scrollTo({ top: el.offsetTop - 20, behavior: 'smooth' }); };
                 const scrollTo = (t) => { if (t === 'top') window.scrollTo({ top: 0, behavior: 'smooth' }); else window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); };
 
@@ -235,7 +219,7 @@
                 }, { deep: true });
 
                 onMounted(fetchConfig);
-                return { config, newUserId, isSaving, statusText, statusColor, copyStatus, saveConfig, addUser, deleteUser, addLink, deleteLink, renameUser, renameGroup, renameLink, copyLink, getJumpUrl, scrollTo, scrollToUser };
+                return { config, newUserId, isSaving, statusText, statusColor, copyStatus, saveConfig, addUser, deleteUser, addLink, deleteLink, renameUser, renameGroup, renameLink, copyLink, getJumpUrl, scrollTo, scrollToUser, addGroup, deleteGroup };
             }
         }).mount('#app');
     </script>
