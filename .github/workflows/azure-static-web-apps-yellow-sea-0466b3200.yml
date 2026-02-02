@@ -8,7 +8,7 @@ on:
     types: [opened, synchronize, reopened, closed]
     branches:
       - main
-  # ✨ 新增：每 10 分钟自动运行一次，解决冷启动延迟
+  # ✨ 新增：每 10 分钟自动运行一次，解决冷启动延迟  chec
   schedule:
     - cron: '*/10 * * * *'
 
@@ -74,3 +74,4 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_SEA_0466B3200 }}
           action: "close"
+
