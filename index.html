@@ -24,7 +24,7 @@
         }
     </script>
 </head>
-<body class="min-h-screen pb-20 relative text-slate-300 font-sans">
+<body class="min-h-screen pb-20 relative text-slate-300">
     <div id="app" class="max-w-6xl mx-auto p-4 md:p-8">
         <header class="bg-card border border-border rounded-xl p-6 mb-6 shadow-lg flex justify-between items-center">
             <div class="flex items-center gap-4">
@@ -78,7 +78,7 @@
                             </button>
                         </div>
                         <div class="flex items-center justify-center gap-2 py-1">
-                            <a :href="getJumpUrl(userId)" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 truncate">🔗 ?id={{ userId }}</a>
+                            <a :href="getJumpUrl(userId)" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 truncate transition-colors">🔗 ?id={{ userId }}</a>
                             <button @click="copyEndpoint(userId)" class="p-2 text-slate-500 hover:text-primary transition-colors bg-slate-800/50 rounded-lg ml-1">
                                 <svg class="w-4 h-4" :class="{'text-green-400': copyStatus[userId]}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path v-if="!copyStatus[userId]" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /><path v-else d="M5 13l4 4L19 7" />
@@ -90,7 +90,7 @@
                     <div class="space-y-4">
                         <div v-for="(links, groupName) in userGroups" :key="groupName" class="bg-slate-900/50 rounded-lg p-3 sm:p-4 border border-slate-800/50">
                             <div class="flex justify-between items-center mb-3 border-b border-white/5 pb-2">
-                                <input type="text" :value="groupName" @change="renameGroup(userId, groupName, $event.target.value)" class="bg-transparent text-xs font-bold text-slate-400 uppercase w-1/3 outline-none focus:text-primary">
+                                <input type="text" :value="groupName" @change="renameGroup(userId, groupName, $event.target.value)" class="bg-transparent text-xs font-bold text-slate-400 uppercase w-1/3 outline-none focus:text-primary transition-colors">
                                 <div class="flex items-center gap-2">
                                     <button @click="toggleGroupProtocol(userId, groupName)" 
                                             :class="getGroupStatusClass(links)"
@@ -104,31 +104,38 @@
                                 </div>
                             </div>
 
-                            <div class="space-y-2">
-                                <div v-for="(url, name) in links" :key="name" class="flex items-center gap-1 group/item">
-                                    <button @click="toggleSingleProtocol(userId, groupName, name)" 
-                                            :class="url.startsWith('https') ? 'text-primary border-primary/40' : 'text-green-500 border-green-500/50'"
-                                            class="w-12 h-6 shrink-0 text-[10px] font-bold rounded border transition-all hover:bg-white/5">
-                                        {{ url.startsWith('https') ? 'S' : 'H' }}
-                                    </button>
+                            <div class="space-y-4 sm:space-y-2">
+                                <div v-for="(url, name) in links" :key="name" class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-1">
+                                    <div class="flex items-center gap-1 w-full sm:w-auto">
+                                        <button @click="toggleSingleProtocol(userId, groupName, name)" 
+                                                :class="url.startsWith('https') ? 'text-primary border-primary/40' : 'text-green-500 border-green-500/50'"
+                                                class="w-12 h-6 shrink-0 text-[10px] font-bold rounded border transition-all hover:bg-white/5">
+                                            {{ url.startsWith('https') ? 'S' : 'H' }}
+                                        </button>
+                                        <input type="text" :value="name" @change="renameLink(userId, groupName, name, $event.target.value)" 
+                                               class="w-24 shrink-0 bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 outline-none focus:border-primary font-mono"
+                                               style="min-width: 90px;">
+                                        
+                                        <a :href="url" target="_blank" class="text-slate-500 hover:text-primary flex items-center shrink-0 w-8 justify-center transition-colors">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-full h-4"><line x1="2" y1="12" x2="22" y2="12"/><polyline points="15 5 22 12 15 19"/></svg>
+                                        </a>
 
-                                    <input type="text" :value="name" @change="renameLink(userId, groupName, name, $event.target.value)" 
-                                           class="flex-1 sm:w-1/4 bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 outline-none focus:border-primary font-mono"
-                                           style="min-width: 80px;">
-                                    
-                                    <a :href="url" target="_blank" class="text-slate-500 hover:text-primary flex items-center shrink-0 w-8 justify-center transition-colors">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-full h-4"><line x1="2" y1="12" x2="22" y2="12"/><polyline points="15 5 22 12 15 19"/></svg>
-                                    </a>
+                                        <button @click="copyFullUrl(url, userId, groupName, name)" 
+                                                class="p-2 text-slate-500 hover:text-primary transition-colors bg-slate-800/50 rounded-lg shrink-0">
+                                            <svg class="w-4 h-4" :class="{'text-green-400': copyItemStatus[userId+groupName+name]}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path v-if="!copyItemStatus[userId+groupName+name]" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                <path v-else d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </button>
 
-                                    <button @click="copyFullUrl(url, userId, groupName, name)" 
-                                            class="p-2 text-slate-500 hover:text-primary transition-colors bg-slate-800/50 rounded-lg shrink-0">
-                                        <svg class="w-4 h-4" :class="{'text-green-400': copyItemStatus[userId+groupName+name]}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <path v-if="!copyItemStatus[userId+groupName+name]" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                            <path v-else d="M5 13l4 4L19 7" />
-                                        </svg>
-                                    </button>
+                                        <div class="flex-1 sm:hidden"></div>
+                                        <button @click="deleteLink(userId, groupName, name)" class="text-slate-600 hover:text-red-400 px-1 shrink-0 font-bold text-sm sm:hidden">×</button>
+                                    </div>
+
+                                    <input type="text" :value="stripProtocol(url)" @input="updateUrl(userId, groupName, name, $event.target.value)" 
+                                           class="w-full sm:flex-1 bg-slate-900 border border-slate-800 rounded px-2 py-1.5 sm:py-1 text-xs font-mono text-primary outline-none focus:border-primary truncate">
                                     
-                                    <button @click="deleteLink(userId, groupName, name)" class="text-slate-600 hover:text-red-400 px-1 shrink-0 font-bold text-sm">×</button>
+                                    <button @click="deleteLink(userId, groupName, name)" class="hidden sm:block text-slate-600 hover:text-red-400 px-1 shrink-0 font-bold text-sm">×</button>
                                 </div>
                             </div>
                         </div>
@@ -201,6 +208,12 @@
                     } catch (e) { statusText.value = 'Save Error'; } finally { isSaving.value = false; }
                 };
 
+                const stripProtocol = (url) => url.replace(/^https?:\/\//, '');
+                const updateUrl = (id, gn, ln, val) => {
+                    const prefix = config.value[id][gn][ln].startsWith('https') ? 'https://' : 'http://';
+                    config.value[id][gn][ln] = prefix + val.replace(/^https?:\/\//, '');
+                };
+
                 const toggleSingleProtocol = (id, gn, ln) => {
                     const url = config.value[id][gn][ln];
                     config.value[id][gn][ln] = url.startsWith('https') ? url.replace('https', 'http') : url.replace('http', 'https');
@@ -210,9 +223,7 @@
                     const links = config.value[id][gn];
                     const hasHttp = Object.values(links).some(u => u.startsWith('http://'));
                     const target = hasHttp ? 'https://' : 'http://';
-                    for (const key in links) { 
-                        links[key] = target + links[key].replace(/^https?:\/\//, ''); 
-                    }
+                    for (const key in links) { links[key] = target + stripProtocol(links[key]); }
                 };
 
                 const getGroupStatusClass = (links) => {
@@ -228,7 +239,7 @@
                     const urls = Object.values(links);
                     const allHttps = urls.every(u => u.startsWith('https'));
                     const allHttp = urls.every(u => u.startsWith('http://'));
-                    return (allHttps) ? 'S' : (allHttp ? 'H' : 'H');
+                    return (allHttps) ? 'S' : 'H';
                 };
 
                 const doCopy = (text, callback) => {
@@ -279,7 +290,7 @@
                 }, { deep: true });
 
                 onMounted(fetchConfig);
-                return { config, newUserId, isSaving, statusText, statusColor, copyStatus, copyItemStatus, saveConfig, addUser, deleteUser, addLink, deleteLink, renameUser, renameGroup, renameLink, scrollTo, scrollToUser, addGroup, deleteGroup, toggleSingleProtocol, toggleGroupProtocol, getGroupStatusClass, getGroupStatusLabel, copyFullUrl, copyEndpoint, getJumpUrl };
+                return { config, newUserId, isSaving, statusText, statusColor, copyStatus, copyItemStatus, saveConfig, addUser, deleteUser, addLink, deleteLink, renameUser, renameGroup, renameLink, scrollTo, scrollToUser, addGroup, deleteGroup, toggleSingleProtocol, toggleGroupProtocol, getGroupStatusClass, getGroupStatusLabel, stripProtocol, updateUrl, copyFullUrl, copyEndpoint, getJumpUrl };
             }
         }).mount('#app');
     </script>
