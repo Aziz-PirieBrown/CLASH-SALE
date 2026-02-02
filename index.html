@@ -12,6 +12,17 @@
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        
+        /* 强力去除 Edge 深色主题强制生成的白边 */
+        input { 
+            border: none !important; 
+            outline: none !important; 
+            box-shadow: none !important; 
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            background-color: transparent;
+        }
+        
         .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
         @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     </style>
@@ -30,7 +41,7 @@
             <div class="flex items-center gap-4">
                 <div class="w-3 h-3 rounded-full transition-colors duration-500" :class="statusColor || 'bg-yellow-500'"></div>
                 <div>
-                    <h1 class="text-xl sm:text-2xl font-bold text-white uppercase tracking-tight">NEXUS <span class="text-primary">AZURE</span></h1>
+                    <h1 class="text-xl sm:text-2xl font-bold text-white uppercase tracking-tight text-sm sm:text-2xl">NEXUS <span class="text-primary">AZURE</span></h1>
                     <div class="text-[10px] sm:text-xs font-mono uppercase tracking-tighter flex gap-2">
                         <span class="text-slate-400">CLOUD_MODE |</span>
                         <span class="init-loading" :class="{'text-green-400': statusText==='Synced', 'text-yellow-400': statusText && statusText.includes('Waking')}">
@@ -56,7 +67,7 @@
                 <div class="bg-card border border-border rounded-xl p-6 shadow-lg sticky top-8">
                     <h3 class="text-xs font-bold text-slate-500 uppercase mb-4 tracking-widest">New Identity</h3>
                     <div class="flex gap-2">
-                        <input v-model="newUserId" @keyup.enter="addUser" type="text" placeholder="ID" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono outline-none focus:border-primary">
+                        <input v-model="newUserId" @keyup.enter="addUser" type="text" placeholder="ID" class="w-full bg-slate-900 rounded-lg px-3 py-2 text-sm text-white font-mono outline-none border-none">
                         <button @click="addUser" class="bg-slate-700 hover:bg-slate-600 px-4 rounded-lg font-bold transition-all">+</button>
                     </div>
                 </div>
@@ -68,10 +79,8 @@
                     <div class="flex flex-col gap-3 mb-6">
                         <div class="flex items-center justify-between w-full">
                             <div class="flex items-center gap-3 flex-1 min-w-0">
-                                <input type="text" 
-                                       :value="userId" 
-                                       @change="renameUser(userId, $event.target.value)" 
-                                       class="h-10 px-3 rounded bg-slate-800 border border-slate-700 font-bold text-primary text-sm uppercase outline-none focus:border-primary w-full max-w-[240px] shadow-inner text-left truncate"
+                                <input type="text" :value="userId" @change="renameUser(userId, $event.target.value)" 
+                                       class="h-10 px-3 rounded bg-slate-800 font-bold text-primary text-sm uppercase outline-none w-full max-w-[240px] text-left truncate border-none shadow-inner"
                                        placeholder="NAME">
                             </div>
                             <button @click="deleteUser(userId)" class="p-2 text-slate-500 hover:text-red-400 shrink-0 transition-colors">
@@ -89,16 +98,17 @@
                     </div>
 
                     <div class="space-y-4">
-                        <div v-for="(links, groupName) in userGroups" :key="groupName" class="bg-slate-900/50 rounded-lg p-3 sm:p-4 border border-slate-800/50">
+                        <div v-for="(links, groupName) in userGroups" :key="groupName" class="bg-slate-900/50 rounded-lg p-3 sm:p-4 border border-slate-800/20">
                             <div class="flex justify-between items-center mb-3 border-b border-white/5 pb-2">
-                                <input type="text" :value="groupName" @change="renameGroup(userId, groupName, $event.target.value)" class="bg-transparent text-xs font-bold text-slate-400 uppercase w-1/3 outline-none focus:text-primary font-mono">
+                                <input type="text" :value="groupName" @change="renameGroup(userId, groupName, $event.target.value)" 
+                                       class="bg-transparent text-xs font-bold text-slate-400 uppercase w-1/3 outline-none border-none focus:text-primary font-mono">
                                 <div class="flex items-center gap-2">
                                     <button @click="toggleGroupProtocol(userId, groupName)" 
                                             :class="getGroupStatusClass(links)"
                                             class="px-2 py-0.5 font-bold text-[9px] rounded border transition-all hover:bg-white/5 uppercase">
                                         {{ getGroupStatusLabel(links) }}
                                     </button>
-                                    <button @click="addLink(userId, groupName)" :disabled="Object.keys(links).length >= 10" class="text-[11px] bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-slate-400 hover:text-white transition-all">
+                                    <button @click="addLink(userId, groupName)" :disabled="Object.keys(links).length >= 10" class="text-[11px] bg-slate-800 border-none px-2 py-0.5 rounded text-slate-400 hover:text-white transition-all disabled:opacity-20">
                                         {{ Object.keys(links).length >= 10 ? 'MAX' : '+🔗' }}
                                     </button>
                                     <button @click="deleteGroup(userId, groupName)" class="text-slate-600 hover:text-red-400 px-1 font-bold text-sm">×</button>
@@ -114,22 +124,22 @@
                                             {{ url.startsWith('https') ? 'HTTPS' : 'HTTP' }}
                                         </button>
                                         <input type="text" :value="name" @change="renameLink(userId, groupName, name, $event.target.value)" 
-                                               class="w-24 shrink-0 bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 outline-none focus:border-primary font-mono"
+                                               class="w-24 shrink-0 bg-slate-900 rounded px-2 py-1 text-xs text-slate-300 outline-none border-none font-mono"
                                                style="min-width: 90px;">
-                                        <a :href="url" target="_blank" class="text-slate-500 hover:text-primary flex items-center shrink-0 w-8 justify-center">
+                                        <a :href="url" target="_blank" class="text-slate-500 hover:text-primary flex items-center shrink-0 w-8 justify-center transition-colors">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-full h-4"><line x1="2" y1="12" x2="22" y2="12"/><polyline points="15 5 22 12 15 19"/></svg>
                                         </a>
                                         <button @click="copyFullUrl(url, userId, groupName, name)" 
-                                                class="p-2 text-slate-500 hover:text-primary transition-colors bg-slate-800/50 rounded shrink-0">
+                                                class="p-2 text-slate-500 hover:text-primary transition-colors bg-slate-800/50 rounded shrink-0 border-none">
                                             <svg class="w-4 h-4" :class="{'text-green-400': copyItemStatus[userId+groupName+name]}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path v-if="!copyItemStatus[userId+groupName+name]" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /><path v-else d="M5 13l4 4L19 7" />
+                                                <path v-if="!copyStatus[userId+groupName+name]" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /><path v-else d="M5 13l4 4L19 7" />
                                             </svg>
                                         </button>
                                         <div class="flex-1 sm:hidden"></div>
                                         <button @click="deleteLink(userId, groupName, name)" class="text-slate-600 hover:text-red-400 px-1 shrink-0 font-bold text-sm sm:hidden">×</button>
                                     </div>
                                     <input type="text" :value="stripProtocol(url)" @input="updateUrl(userId, groupName, name, $event.target.value)" 
-                                           class="w-full sm:flex-1 bg-slate-900 border border-slate-800 rounded px-2 py-1.5 sm:py-1 text-xs font-mono text-primary outline-none focus:border-primary truncate">
+                                           class="w-full sm:flex-1 bg-slate-900 rounded px-2 py-1.5 sm:py-1 text-xs font-mono text-primary outline-none border-none truncate">
                                     <button @click="deleteLink(userId, groupName, name)" class="hidden sm:block text-slate-600 hover:text-red-400 px-1 shrink-0 font-bold text-sm">×</button>
                                 </div>
                             </div>
@@ -147,7 +157,11 @@
     </div>
 
     <script>
+        // 管理 API 接口（仅限后台通讯）
         const SERVICE_URL = 'https://forever302free-h0d9bvemhaaffzhk.southeastasia-01.azurewebsites.net/go?code=__AZURE_KEY__';
+        // 对外跳转入口（带免费证书的静态页地址）
+        const PUBLIC_DOMAIN = 'https://yellow-sea-0466b3200.6.azurestaticapps.net/go.html';
+        
         const { createApp, ref, onMounted, watch } = Vue;
         
         createApp({
@@ -160,7 +174,6 @@
                 const copyStatus = ref({});
                 const copyItemStatus = ref({});
                 let timer = null;
-
                 const CACHE_KEY = 'NEXUS_CONFIG_CACHE';
 
                 const cleanupAndReorder = (data) => {
@@ -187,21 +200,13 @@
                 };
 
                 const fetchConfig = async () => {
-                    // ✨ 1. 尝试从本地加载缓存 (电脑端秒开的关键)
                     const cached = localStorage.getItem(CACHE_KEY);
-                    if (cached) {
-                        config.value = JSON.parse(cached);
-                        statusText.value = 'Local Loaded';
-                    }
-
+                    if (cached) { config.value = JSON.parse(cached); statusText.value = 'Local Loaded'; }
                     try {
                         const res = await fetch(`${SERVICE_URL}&action=get`);
                         const onlineData = cleanupAndReorder(await res.json() || {});
-                        
-                        // ✨ 2. 如果远程数据和缓存不一致，则更新并覆盖本地
                         config.value = onlineData;
                         localStorage.setItem(CACHE_KEY, JSON.stringify(onlineData));
-                        
                         statusText.value = 'Synced'; statusColor.value = 'bg-green-400';
                     } catch (e) { 
                         statusText.value = cached ? 'Offline Mode' : 'Connect Error'; 
@@ -211,9 +216,7 @@
 
                 const saveConfig = async () => {
                     isSaving.value = true;
-                    // 保存时同步更新本地缓存
                     localStorage.setItem(CACHE_KEY, JSON.stringify(config.value));
-                    
                     try {
                         await fetch(`${SERVICE_URL}&action=save`, {
                             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -257,9 +260,11 @@
                     document.body.removeChild(area);
                 };
 
+                // ✨ 获取带证书的公共链接
+                const getJumpUrl = (uid) => `${PUBLIC_DOMAIN}?id=${uid}`;
+
                 const copyEndpoint = (uid) => {
-                    const url = `https://forever302free-h0d9bvemhaaffzhk.southeastasia-01.azurewebsites.net/go?id=${uid}`;
-                    doCopy(url, () => { copyStatus.value[uid] = true; setTimeout(() => copyStatus.value[uid] = false, 2000); });
+                    doCopy(getJumpUrl(uid), () => { copyStatus.value[uid] = true; setTimeout(() => copyStatus.value[uid] = false, 2000); });
                 };
 
                 const copyFullUrl = (url, id, gn, ln) => {
@@ -276,7 +281,6 @@
                 const renameUser = (o, n) => { if(n && !config.value[n]) { config.value[n] = config.value[o]; delete config.value[o]; }};
                 const renameGroup = (id, o, n) => { if(n && !config.value[id][n]) { config.value[id][n] = config.value[id][o]; delete config.value[id][o]; }};
                 const renameLink = (id, gn, o, n) => { if(n && !config.value[id][gn][n]) { config.value[id][gn][n] = config.value[id][gn][o]; delete config.value[id][gn][o]; }};
-                const getJumpUrl = (uid) => `https://forever302free-h0d9bvemhaaffzhk.southeastasia-01.azurewebsites.net/go?id=${uid}`;
                 const scrollToUser = (id) => { const el = document.getElementById('user-' + id); if (el) window.scrollTo({ top: el.offsetTop - 20, behavior: 'smooth' }); };
                 const scrollTo = (t) => { if (t === 'top') window.scrollTo({ top: 0, behavior: 'smooth' }); else window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); };
 
