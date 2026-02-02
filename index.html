@@ -191,7 +191,14 @@
                 const renameGroup = (id, o, n) => { if(n && !config.value[id][n]) { config.value[id][n] = config.value[id][o]; delete config.value[id][o]; }};
                 const renameLink = (id, gn, o, n) => { if(n && !config.value[id][gn][n]) { config.value[id][gn][n] = config.value[id][gn][o]; delete config.value[id][gn][o]; }};
                 const getJumpUrl = (uid) => `${SERVICE_URL}&id=${uid}`;
-                const copyLink = (uid) => { navigator.clipboard.writeText(getJumpUrl(uid)); copyStatus.value[uid] = true; setTimeout(() => copyStatus.value[uid] = false, 2000); };
+                const copyLink = (uid) => { 
+                        // ✨ 这里手动拼接你的短域名
+                        const url = `http://x.o-i.cc.cd/go?id=${uid}`; 
+                        navigator.clipboard.writeText(url); 
+                        
+                        copyStatus.value[uid] = true; 
+                        setTimeout(() => copyStatus.value[uid] = false, 2000); 
+                    };
                 const scrollToUser = (id) => { const el = document.getElementById('user-' + id); if (el) window.scrollTo({ top: el.offsetTop - 20, behavior: 'smooth' }); };
                 const scrollTo = (t) => { if (t === 'top') window.scrollTo({ top: 0, behavior: 'smooth' }); else window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); };
 
@@ -209,3 +216,4 @@
     </script>
 </body>
 </html>
+
