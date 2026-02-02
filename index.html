@@ -71,7 +71,7 @@
                                 <input type="text" 
                                        :value="userId" 
                                        @change="renameUser(userId, $event.target.value)" 
-                                       class="h-10 px-3 rounded bg-slate-800 border border-slate-700 font-bold text-primary text-sm uppercase outline-none focus:border-primary w-full max-w-[200px] shadow-inner text-center truncate"
+                                       class="h-10 px-3 rounded bg-slate-800 border border-slate-700 font-bold text-primary text-sm uppercase outline-none focus:border-primary w-full max-w-[240px] shadow-inner text-left truncate"
                                        placeholder="NAME">
                             </div>
                             <button @click="deleteUser(userId)" class="p-2 text-slate-500 hover:text-red-400 shrink-0 transition-colors">
@@ -79,7 +79,7 @@
                             </button>
                         </div>
                         <div class="flex items-center justify-center gap-2 py-1">
-                            <a :href="getJumpUrl(userId)" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 truncate">🔗 ?id={{ userId }}</a>
+                            <a :href="getJumpUrl(userId)" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 truncate transition-colors">🔗 ?id={{ userId }}</a>
                             <button @click="copyEndpoint(userId)" class="p-1.5 text-slate-500 hover:text-primary transition-colors bg-slate-800/50 rounded ml-1">
                                 <svg class="w-4 h-4" :class="{'text-green-400': copyStatus[userId]}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path v-if="!copyStatus[userId]" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /><path v-else d="M5 13l4 4L19 7" />
@@ -98,7 +98,7 @@
                                             class="px-2 py-0.5 font-bold text-[9px] rounded border transition-all hover:bg-white/5 uppercase">
                                         {{ getGroupStatusLabel(links) }}
                                     </button>
-                                    <button @click="addLink(userId, groupName)" :disabled="Object.keys(links).length >= 10" class="text-[11px] bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-slate-400 hover:text-white transition-all disabled:opacity-20">
+                                    <button @click="addLink(userId, groupName)" :disabled="Object.keys(links).length >= 10" class="text-[11px] bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-slate-400 hover:text-white transition-all">
                                         {{ Object.keys(links).length >= 10 ? 'MAX' : '+🔗' }}
                                     </button>
                                     <button @click="deleteGroup(userId, groupName)" class="text-slate-600 hover:text-red-400 px-1 font-bold text-sm">×</button>
@@ -113,30 +113,23 @@
                                                 class="w-14 h-6 shrink-0 text-[8px] font-black rounded border transition-all hover:bg-white/5 text-center">
                                             {{ url.startsWith('https') ? 'HTTPS' : 'HTTP' }}
                                         </button>
-                                        
                                         <input type="text" :value="name" @change="renameLink(userId, groupName, name, $event.target.value)" 
                                                class="w-24 shrink-0 bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 outline-none focus:border-primary font-mono"
                                                style="min-width: 90px;">
-                                        
-                                        <a :href="url" target="_blank" class="text-slate-500 hover:text-primary flex items-center shrink-0 w-8 justify-center transition-colors">
+                                        <a :href="url" target="_blank" class="text-slate-500 hover:text-primary flex items-center shrink-0 w-8 justify-center">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-full h-4"><line x1="2" y1="12" x2="22" y2="12"/><polyline points="15 5 22 12 15 19"/></svg>
                                         </a>
-
                                         <button @click="copyFullUrl(url, userId, groupName, name)" 
                                                 class="p-2 text-slate-500 hover:text-primary transition-colors bg-slate-800/50 rounded shrink-0">
                                             <svg class="w-4 h-4" :class="{'text-green-400': copyItemStatus[userId+groupName+name]}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path v-if="!copyItemStatus[userId+groupName+name]" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                                <path v-else d="M5 13l4 4L19 7" />
+                                                <path v-if="!copyItemStatus[userId+groupName+name]" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /><path v-else d="M5 13l4 4L19 7" />
                                             </svg>
                                         </button>
-
                                         <div class="flex-1 sm:hidden"></div>
                                         <button @click="deleteLink(userId, groupName, name)" class="text-slate-600 hover:text-red-400 px-1 shrink-0 font-bold text-sm sm:hidden">×</button>
                                     </div>
-
                                     <input type="text" :value="stripProtocol(url)" @input="updateUrl(userId, groupName, name, $event.target.value)" 
                                            class="w-full sm:flex-1 bg-slate-900 border border-slate-800 rounded px-2 py-1.5 sm:py-1 text-xs font-mono text-primary outline-none focus:border-primary truncate">
-                                    
                                     <button @click="deleteLink(userId, groupName, name)" class="hidden sm:block text-slate-600 hover:text-red-400 px-1 shrink-0 font-bold text-sm">×</button>
                                 </div>
                             </div>
@@ -162,11 +155,13 @@
                 const config = ref({});
                 const newUserId = ref('');
                 const isSaving = ref(false);
-                const statusText = ref('Waking up server...');
+                const statusText = ref('Connecting...');
                 const statusColor = ref('bg-yellow-500');
                 const copyStatus = ref({});
                 const copyItemStatus = ref({});
                 let timer = null;
+
+                const CACHE_KEY = 'NEXUS_CONFIG_CACHE';
 
                 const cleanupAndReorder = (data) => {
                     const cleanData = JSON.parse(JSON.stringify(data));
@@ -192,15 +187,33 @@
                 };
 
                 const fetchConfig = async () => {
+                    // ✨ 1. 尝试从本地加载缓存 (电脑端秒开的关键)
+                    const cached = localStorage.getItem(CACHE_KEY);
+                    if (cached) {
+                        config.value = JSON.parse(cached);
+                        statusText.value = 'Local Loaded';
+                    }
+
                     try {
                         const res = await fetch(`${SERVICE_URL}&action=get`);
-                        config.value = cleanupAndReorder(await res.json() || {});
+                        const onlineData = cleanupAndReorder(await res.json() || {});
+                        
+                        // ✨ 2. 如果远程数据和缓存不一致，则更新并覆盖本地
+                        config.value = onlineData;
+                        localStorage.setItem(CACHE_KEY, JSON.stringify(onlineData));
+                        
                         statusText.value = 'Synced'; statusColor.value = 'bg-green-400';
-                    } catch (e) { statusText.value = 'Connect Error'; statusColor.value = 'bg-red-500'; }
+                    } catch (e) { 
+                        statusText.value = cached ? 'Offline Mode' : 'Connect Error'; 
+                        statusColor.value = cached ? 'bg-blue-400' : 'bg-red-500'; 
+                    }
                 };
 
                 const saveConfig = async () => {
                     isSaving.value = true;
+                    // 保存时同步更新本地缓存
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(config.value));
+                    
                     try {
                         await fetch(`${SERVICE_URL}&action=save`, {
                             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -223,8 +236,7 @@
 
                 const toggleGroupProtocol = (id, gn) => {
                     const links = config.value[id][gn];
-                    const hasHttp = Object.values(links).some(u => u.startsWith('http://'));
-                    const target = hasHttp ? 'https://' : 'http://';
+                    const target = Object.values(links).some(u => u.startsWith('http://')) ? 'https://' : 'http://';
                     for (const key in links) { links[key] = target + stripProtocol(links[key]); }
                 };
 
@@ -235,11 +247,7 @@
                     return 'text-yellow-500 border-yellow-500/50';
                 };
 
-                const getGroupStatusLabel = (links) => {
-                    const urls = Object.values(links);
-                    if (urls.every(u => u.startsWith('https'))) return 'HTTPS';
-                    return 'HTTP';
-                };
+                const getGroupStatusLabel = (links) => Object.values(links).every(u => u.startsWith('https')) ? 'HTTPS' : 'HTTP';
 
                 const doCopy = (text, callback) => {
                     const area = document.createElement("textarea"); area.value = text;
@@ -274,7 +282,7 @@
 
                 watch(config, () => {
                     clearTimeout(timer);
-                    if(statusText.value === 'Synced') statusText.value = 'Modified...';
+                    if(statusText.value === 'Synced' || statusText.value === 'Local Loaded') statusText.value = 'Modified...';
                     timer = setTimeout(saveConfig, 2000);
                 }, { deep: true });
 
