@@ -30,6 +30,9 @@
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         input { background: rgba(15, 23, 42, 0.6); transition: all 0.2s; }
         input:focus { outline: none; border-color: #38bdf8; background: rgba(15, 23, 42, 0.9); }
+        /* 骨架屏动画 */
+        .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     </style>
 </head>
 
@@ -48,7 +51,7 @@
                     <div class="text-slate-400 text-xs font-mono mt-1 flex gap-2">
                         <span>CLOUD_MODE</span>
                         <span class="text-slate-600">|</span>
-                        <span :class="{'text-green-400': statusText==='Synced', 'text-red-400': statusText.includes('Error')}">{{ statusText }}</span>
+                        <span :class="{'text-green-400': statusText==='Synced', 'text-yellow-400': statusText.includes('Waking')}">{{ statusText }}</span>
                     </div>
                 </div>
             </div>
@@ -60,9 +63,30 @@
             </button>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div class="lg:col-span-3 space-y-6">
-                <div class="bg-card border border-border rounded-xl p-4 shadow-lg">
+        <div v-if="Object.keys(config).length > 0" class="bg-card border border-border rounded-xl p-4 mb-8 shadow-lg">
+            <div class="text-xs font-bold text-slate-500 uppercase px-2 mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 bg-primary rounded-full"></span> Quick Navigator
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <div v-for="(val, userId) in config" :key="'nav-'+userId" 
+                     @click="scrollToUser(userId)"
+                     class="px-4 py-2 bg-slate-800 hover:bg-primary hover:text-white border border-slate-700 rounded-lg cursor-pointer transition-all text-sm font-medium flex items-center gap-2 group">
+                    <span class="text-[10px] opacity-50 font-mono">{{ userId.substring(0,2).toUpperCase() }}</span>
+                    {{ userId }}
+                </div>
+            </div>
+        </div>
+
+        <div v-if="Object.keys(config).length === 0" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-4 h-32 skeleton rounded-xl border border-border"></div>
+                <div class="lg:col-span-8 h-96 skeleton rounded-xl border border-border"></div>
+            </div>
+        </div>
+
+        <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-4 space-y-6">
+                <div class="bg-card border border-border rounded-xl p-6 shadow-lg sticky top-8">
                     <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">New Identity</h3>
                     <div class="flex gap-2 relative">
                         <span class="absolute left-3 top-2.5 text-slate-500 font-mono">ID:</span>
@@ -70,28 +94,14 @@
                         <button @click="addUser" class="bg-slate-700 hover:bg-slate-600 text-white px-3 rounded-lg border border-slate-600">+</button>
                     </div>
                 </div>
-
-                <div class="bg-card border border-border rounded-xl p-2 shadow-lg sticky top-8">
-                    <div class="text-xs font-bold text-slate-500 uppercase p-3 border-b border-white/5 mb-2">Navigator</div>
-                    <div class="max-h-[60vh] overflow-y-auto">
-                        <div v-for="(val, userId) in config" :key="'nav-'+userId" 
-                             @click="scrollToUser(userId)"
-                             class="flex items-center gap-3 p-3 hover:bg-slate-800 rounded-lg cursor-pointer transition-colors group">
-                            <div class="w-8 h-8 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-[10px] font-bold text-primary group-hover:border-primary">
-                                {{ userId.substring(0,2).toUpperCase() }}
-                            </div>
-                            <span class="text-sm font-medium truncate">{{ userId }}</span>
-                        </div>
-                    </div>
-                </div>
             </div>
 
-            <div class="lg:col-span-9 space-y-6">
+            <div class="lg:col-span-8 space-y-6">
                 <transition-group name="list">
                     <div v-for="(userGroups, userId) in config" :key="userId" :id="'user-'+userId" class="bg-card border border-border rounded-xl p-6 shadow-lg relative group transition-all mb-6">
                         <div class="flex justify-between items-center mb-6 pb-4 border-b border-white/5">
                             <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-primary">
+                                <div class="w-12 h-12 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-primary shadow-inner">
                                     {{ userId.substring(0,2).toUpperCase() }}
                                 </div>
                                 <div>
@@ -102,10 +112,9 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-2">
-                                <button @click="copyLink(userId)" class="p-2" :class="copyStatus[userId] ? 'text-green-400' : 'text-slate-600 hover:text-primary'">
-                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                    </svg>
+                                <button @click="copyLink(userId)" class="p-2 text-slate-600 hover:text-primary transition-colors">
+                                    <svg v-if="!copyStatus[userId]" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                    <svg v-else class="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M5 13l4 4L19 7" stroke-width="2"/></svg>
                                 </button>
                                 <button @click="deleteUser(userId)" class="text-slate-600 hover:text-red-400 p-2"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2"/></svg></button>
                             </div>
@@ -114,29 +123,29 @@
                         <div class="space-y-4">
                             <div v-for="(links, groupName) in userGroups" :key="groupName" class="bg-slate-900/50 rounded-lg p-4 border border-slate-800/50">
                                 <div class="flex justify-between items-center mb-3">
-                                    <input type="text" :value="groupName" @change="renameGroup(userId, groupName, $event.target.value)" class="bg-transparent text-sm font-bold text-slate-300 uppercase cursor-pointer">
+                                    <input type="text" :value="groupName" @change="renameGroup(userId, groupName, $event.target.value)" class="bg-transparent text-sm font-bold text-slate-300 uppercase cursor-pointer focus:text-primary transition-colors">
                                     <div class="flex items-center gap-2">
-                                        <button @click="addLink(userId, groupName)" class="text-xs bg-slate-800 hover:bg-primary px-2 py-1 rounded transition border border-slate-700">+ LINK</button>
-                                        <button @click="deleteGroup(userId, groupName)" class="text-xs text-slate-500">×</button>
+                                        <button @click="addLink(userId, groupName)" class="text-[10px] bg-slate-800 hover:bg-primary text-white px-2 py-1 rounded transition border border-slate-700">+ LINK</button>
+                                        <button @click="deleteGroup(userId, groupName)" class="text-xs text-slate-600 hover:text-red-400 px-2">×</button>
                                     </div>
                                 </div>
                                 <div class="space-y-2 pl-3">
-                                    <div v-for="(url, name) in links" :key="name" class="flex items-center gap-3 group/link">
+                                    <div v-for="(url, name) in links" :key="name" class="flex items-center gap-3">
                                         <input type="text" :value="name" @change="renameLink(userId, groupName, name, $event.target.value)" class="w-1/3 bg-slate-900 border border-slate-800 rounded px-3 py-1 text-xs text-slate-200">
                                         
-                                        <a :href="config[userId][groupName][name]" target="_blank" class="text-slate-500 hover:text-primary cursor-pointer transition-colors flex items-center justify-center shrink-0 w-10" title="Go to link">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-5">
+                                        <a :href="config[userId][groupName][name]" target="_blank" class="text-slate-500 hover:text-primary cursor-pointer transition-colors flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-5">
                                                 <line x1="2" y1="12" x2="22" y2="12"></line>
                                                 <polyline points="15 5 22 12 15 19"></polyline>
                                             </svg>
                                         </a>
 
                                         <input type="text" v-model="config[userId][groupName][name]" class="flex-1 bg-slate-900 border border-slate-800 rounded px-3 py-1 text-xs font-mono text-primary">
-                                        <button @click="deleteLink(userId, groupName, name)" class="text-slate-600 hover:text-red-400 opacity-0 group-hover/link:opacity-100">×</button>
+                                        <button @click="deleteLink(userId, groupName, name)" class="text-slate-600 hover:text-red-400 px-2 transition-opacity">×</button>
                                     </div>
                                 </div>
                             </div>
-                            <button @click="addGroup(userId)" class="w-full py-2 border border-dashed border-slate-700 text-slate-500 hover:text-primary rounded-lg text-xs font-bold uppercase tracking-widest">+ New Group</button>
+                            <button @click="addGroup(userId)" class="w-full py-2 border border-dashed border-slate-700 text-slate-500 hover:text-primary rounded-lg text-xs font-bold uppercase tracking-widest transition-all">+ New Group</button>
                         </div>
                     </div>
                 </transition-group>
@@ -145,14 +154,10 @@
 
         <div class="fixed bottom-8 right-8 flex flex-col gap-2 z-50">
             <button @click="scrollTo('top')" class="w-12 h-12 rounded-full bg-slate-800/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all shadow-2xl group">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 group-hover:-translate-y-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
-                </svg>
+                <svg class="w-6 h-6 group-hover:-translate-y-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 15l7-7 7 7"/></svg>
             </button>
             <button @click="scrollTo('bottom')" class="w-12 h-12 rounded-full bg-slate-800/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all shadow-2xl group">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 group-hover:translate-y-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
+                <svg class="w-6 h-6 group-hover:translate-y-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M19 9l-7 7-7-7"/></svg>
             </button>
         </div>
     </div>
@@ -166,17 +171,15 @@
                 const config = ref({});
                 const newUserId = ref('');
                 const isSaving = ref(false);
-                const statusText = ref('Connecting...');
+                const statusText = ref('Waking up server...'); // 优化初始显示
                 const statusColor = ref('bg-yellow-500');
                 const copyStatus = ref({});
                 let timer = null;
 
                 const fetchConfig = async () => {
                     try {
-                        statusText.value = 'Syncing...';
                         const res = await fetch(`${SERVICE_URL}&action=get`);
-                        const data = await res.json();
-                        config.value = data || {};
+                        config.value = await res.json() || {};
                         statusText.value = 'Synced';
                         statusColor.value = 'bg-green-400';
                     } catch (e) {
@@ -198,27 +201,23 @@
                     } catch (e) {
                         statusText.value = 'Save Error';
                         statusColor.value = 'bg-red-500';
-                    } finally {
-                        isSaving.value = false;
-                    }
+                    } finally { isSaving.value = false; }
                 };
 
-                // 通用滚动函数
-                const scrollTo = (target) => {
-                    if (target === 'top') window.scrollTo({ top: 0, behavior: 'smooth' });
-                    else if (target === 'bottom') window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-                };
-
-                // 滚动到特定用户
                 const scrollToUser = (id) => {
                     const el = document.getElementById('user-' + id);
                     if (el) window.scrollTo({ top: el.offsetTop - 20, behavior: 'smooth' });
                 };
 
+                const scrollTo = (t) => {
+                    if (t === 'top') window.scrollTo({ top: 0, behavior: 'smooth' });
+                    else window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                };
+
                 const addUser = () => {
                     const id = newUserId.value.trim();
                     if (id && !config.value[id]) {
-                        config.value[id] = { 'root': { 'My NAS': 'http://' } };
+                        config.value[id] = { 'root': { 'My Link': 'http://' } };
                         newUserId.value = '';
                     }
                 };
@@ -232,7 +231,7 @@
 
                 watch(config, () => {
                     clearTimeout(timer);
-                    statusText.value = 'Modified...';
+                    if(statusText.value === 'Synced') statusText.value = 'Modified...';
                     timer = setTimeout(saveConfig, 2000);
                 }, { deep: true });
 
