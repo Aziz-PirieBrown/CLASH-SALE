@@ -4,174 +4,133 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NEXUS | Azure Link Manager</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⭐</text></svg>">
+    <style>
+        [v-cloak] { display: none !important; }
+        body { background-color: #0f172a; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; margin: 0; }
+        .init-loading { color: #38bdf8; font-family: monospace; font-size: 12px; text-transform: uppercase; }
+        html { scroll-behavior: smooth; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    </style>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        bg: '#0f172a', card: '#1e293b', border: '#334155',
-                        input: '#0f172a', primary: '#38bdf8', accent: '#22d3ee', success: '#4ade80',
-                    }
-                }
-            }
+            theme: { extend: { colors: { bg: '#0f172a', card: '#1e293b', border: '#334155', primary: '#38bdf8' } } }
         }
     </script>
-    <style>
-        html { scroll-behavior: smooth; }
-        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; }
-        .list-enter-active, .list-leave-active { transition: all 0.3s ease; }
-        .list-enter-from, .list-leave-to { opacity: 0; transform: translateY(10px); }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        input { background: rgba(15, 23, 42, 0.6); transition: all 0.2s; }
-        input:focus { outline: none; border-color: #38bdf8; background: rgba(15, 23, 42, 0.9); }
-        /* 骨架屏动画 */
-        .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
-        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-    </style>
 </head>
-
 <body class="min-h-screen pb-20 relative">
     <div id="app" class="max-w-6xl mx-auto p-4 md:p-8">
-        <header class="bg-card border border-border rounded-xl p-6 mb-8 shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
+        <header class="bg-card border border-border rounded-xl p-6 mb-6 shadow-lg flex justify-between items-center">
             <div class="flex items-center gap-4">
-                <div class="relative">
-                    <div class="w-3 h-3 rounded-full" :class="statusColor"></div>
-                    <div v-if="statusText === 'Synced'" class="absolute top-0 left-0 w-3 h-3 rounded-full bg-green-400 animate-ping opacity-75"></div>
-                </div>
+                <div class="w-3 h-3 rounded-full transition-colors duration-500" :class="statusColor || 'bg-yellow-500'"></div>
                 <div>
-                    <h1 class="text-3xl font-bold tracking-tight text-white flex items-center gap-2">
-                        <span class="text-primary">NEXUS</span> AZURE
-                    </h1>
-                    <div class="text-slate-400 text-xs font-mono mt-1 flex gap-2">
-                        <span>CLOUD_MODE</span>
-                        <span class="text-slate-600">|</span>
-                        <span :class="{'text-green-400': statusText==='Synced', 'text-yellow-400': statusText.includes('Waking')}">{{ statusText }}</span>
+                    <h1 class="text-2xl font-bold text-white">NEXUS <span class="text-primary">AZURE</span></h1>
+                    <div class="text-xs font-mono uppercase tracking-tighter flex gap-2">
+                        <span class="text-slate-400">CLOUD_MODE |</span>
+                        <span class="init-loading" :class="{'text-green-400': statusText==='Synced', 'text-yellow-400': statusText && statusText.includes('Waking')}">
+                            {{ statusText || 'Waking up server...' }}
+                        </span>
                     </div>
                 </div>
             </div>
-            <button @click="saveConfig" :disabled="isSaving" class="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition-all active:scale-95 disabled:opacity-50">
-                <span class="flex items-center gap-2">
-                    <span v-if="isSaving" class="animate-spin">⟳</span>
-                    <span v-else>SYNC TO CLOUD</span>
-                </span>
+            <button v-cloak @click="saveConfig" :disabled="isSaving" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all active:scale-95 disabled:opacity-50 font-bold">
+                {{ isSaving ? 'SAVING...' : 'SYNC' }}
             </button>
         </header>
 
-        <div v-if="Object.keys(config).length > 0" class="bg-card border border-border rounded-xl p-4 mb-8 shadow-lg">
-            <div class="text-xs font-bold text-slate-500 uppercase px-2 mb-3 flex items-center gap-2">
-                <span class="w-2 h-2 bg-primary rounded-full"></span> Quick Navigator
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <div v-for="(val, userId) in config" :key="'nav-'+userId" 
-                     @click="scrollToUser(userId)"
-                     class="px-4 py-2 bg-slate-800 hover:bg-primary hover:text-white border border-slate-700 rounded-lg cursor-pointer transition-all text-sm font-medium flex items-center gap-2 group">
-                    <span class="text-[10px] opacity-50 font-mono">{{ userId.substring(0,2).toUpperCase() }}</span>
-                    {{ userId }}
-                </div>
+        <div v-cloak v-if="Object.keys(config).length > 0" class="flex flex-wrap gap-2 mb-8 bg-slate-900/40 p-3 rounded-xl border border-border/50">
+            <div v-for="(val, userId) in config" :key="'nav-'+userId" @click="scrollToUser(userId)"
+                 class="px-3 py-1.5 bg-slate-800 hover:bg-primary/20 border border-slate-700 hover:border-primary rounded-md cursor-pointer transition-all text-sm font-mono">
+                #{{ userId }}
             </div>
         </div>
 
         <div v-if="Object.keys(config).length === 0" class="space-y-6">
+            <div class="h-10 w-full skeleton rounded-lg opacity-20 mb-8"></div>
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <div class="lg:col-span-4 h-32 skeleton rounded-xl border border-border"></div>
-                <div class="lg:col-span-8 h-96 skeleton rounded-xl border border-border"></div>
+                <div class="lg:col-span-4 h-48 skeleton rounded-xl border border-border opacity-50"></div>
+                <div class="lg:col-span-8 h-80 skeleton rounded-xl border border-border opacity-50"></div>
             </div>
         </div>
 
-        <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div class="lg:col-span-4 space-y-6">
+        <div v-cloak v-else class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-4">
                 <div class="bg-card border border-border rounded-xl p-6 shadow-lg sticky top-8">
-                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">New Identity</h3>
-                    <div class="flex gap-2 relative">
-                        <span class="absolute left-3 top-2.5 text-slate-500 font-mono">ID:</span>
-                        <input v-model="newUserId" @keyup.enter="addUser" type="text" class="w-full border border-slate-600 rounded-lg pl-10 pr-4 py-2 text-sm text-white font-mono">
-                        <button @click="addUser" class="bg-slate-700 hover:bg-slate-600 text-white px-3 rounded-lg border border-slate-600">+</button>
+                    <h3 class="text-xs font-bold text-slate-500 uppercase mb-4">New Identity</h3>
+                    <div class="flex gap-2">
+                        <input v-model="newUserId" @keyup.enter="addUser" type="text" placeholder="ID" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                        <button @click="addUser" class="bg-slate-700 hover:bg-slate-600 px-4 rounded-lg font-bold">+</button>
                     </div>
                 </div>
             </div>
 
             <div class="lg:col-span-8 space-y-6">
-                <transition-group name="list">
-                    <div v-for="(userGroups, userId) in config" :key="userId" :id="'user-'+userId" class="bg-card border border-border rounded-xl p-6 shadow-lg relative group transition-all mb-6">
-                        <div class="flex justify-between items-center mb-6 pb-4 border-b border-white/5">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-primary shadow-inner">
-                                    {{ userId.substring(0,2).toUpperCase() }}
-                                </div>
-                                <div>
-                                    <input type="text" :value="userId" @change="renameUser(userId, $event.target.value)" class="bg-transparent text-2xl font-bold text-white tracking-tight w-full focus:outline-none">
-                                    <a :href="getJumpUrl(userId)" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 transition-colors cursor-pointer flex items-center gap-1">
-                                        🔗 Endpoint: ?id={{ userId }}
-                                    </a>
-                                </div>
+                <div v-for="(userGroups, userId) in config" :key="userId" :id="'user-'+userId" class="bg-card border border-border rounded-xl p-6 shadow-lg relative group transition-all">
+                    <div class="flex justify-between items-center mb-6 pb-4 border-b border-white/5">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-primary shadow-inner">
+                                {{ userId.substring(0,2).toUpperCase() }}
                             </div>
-                            <div class="flex items-center gap-2">
-                                <button @click="copyLink(userId)" class="p-2 text-slate-600 hover:text-primary transition-colors">
-                                    <svg v-if="!copyStatus[userId]" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                                    <svg v-else class="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M5 13l4 4L19 7" stroke-width="2"/></svg>
-                                </button>
-                                <button @click="deleteUser(userId)" class="text-slate-600 hover:text-red-400 p-2"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2"/></svg></button>
+                            <div>
+                                <input type="text" :value="userId" @change="renameUser(userId, $event.target.value)" class="bg-transparent text-xl font-bold text-white focus:outline-none">
+                                <a :href="getJumpUrl(userId)" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1">🔗 ?id={{ userId }}</a>
                             </div>
                         </div>
-
-                        <div class="space-y-4">
-                            <div v-for="(links, groupName) in userGroups" :key="groupName" class="bg-slate-900/50 rounded-lg p-4 border border-slate-800/50">
-                                <div class="flex justify-between items-center mb-3">
-                                    <input type="text" :value="groupName" @change="renameGroup(userId, groupName, $event.target.value)" class="bg-transparent text-sm font-bold text-slate-300 uppercase cursor-pointer focus:text-primary transition-colors">
-                                    <div class="flex items-center gap-2">
-                                        <button @click="addLink(userId, groupName)" class="text-[10px] bg-slate-800 hover:bg-primary text-white px-2 py-1 rounded transition border border-slate-700">+ LINK</button>
-                                        <button @click="deleteGroup(userId, groupName)" class="text-xs text-slate-600 hover:text-red-400 px-2">×</button>
-                                    </div>
-                                </div>
-                                <div class="space-y-2 pl-3">
-                                    <div v-for="(url, name) in links" :key="name" class="flex items-center gap-3">
-                                        <input type="text" :value="name" @change="renameLink(userId, groupName, name, $event.target.value)" class="w-1/3 bg-slate-900 border border-slate-800 rounded px-3 py-1 text-xs text-slate-200">
-                                        
-                                        <a :href="config[userId][groupName][name]" target="_blank" class="text-slate-500 hover:text-primary cursor-pointer transition-colors flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-5">
-                                                <line x1="2" y1="12" x2="22" y2="12"></line>
-                                                <polyline points="15 5 22 12 15 19"></polyline>
-                                            </svg>
-                                        </a>
-
-                                        <input type="text" v-model="config[userId][groupName][name]" class="flex-1 bg-slate-900 border border-slate-800 rounded px-3 py-1 text-xs font-mono text-primary">
-                                        <button @click="deleteLink(userId, groupName, name)" class="text-slate-600 hover:text-red-400 px-2 transition-opacity">×</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <button @click="addGroup(userId)" class="w-full py-2 border border-dashed border-slate-700 text-slate-500 hover:text-primary rounded-lg text-xs font-bold uppercase tracking-widest transition-all">+ New Group</button>
+                        <div class="flex items-center gap-2">
+                            <button @click="copyLink(userId)" class="p-2 text-slate-500 hover:text-primary transition-colors">
+                                <svg v-if="!copyStatus[userId]" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                <svg v-else class="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                            </button>
+                            <button @click="deleteUser(userId)" class="text-slate-500 hover:text-red-400 p-2"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                         </div>
                     </div>
-                </transition-group>
+
+                    <div class="space-y-4">
+                        <div v-for="(links, groupName) in userGroups" :key="groupName" class="bg-slate-900/50 rounded-lg p-4 border border-slate-800/50">
+                            <div class="flex justify-between items-center mb-3 border-b border-white/5 pb-2">
+                                <input type="text" :value="groupName" @change="renameGroup(userId, groupName, $event.target.value)" class="bg-transparent text-xs font-bold text-slate-400 uppercase">
+                                <button @click="addLink(userId, groupName)" class="text-[10px] bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-slate-400 hover:text-white">+ LINK</button>
+                            </div>
+                            <div class="space-y-2">
+                                <div v-for="(url, name) in links" :key="name" class="flex items-center gap-1 group/link">
+                                    <input type="text" :value="name" @change="renameLink(userId, groupName, name, $event.target.value)" class="w-1/4 bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300">
+                                    
+                                    <a :href="config[userId][groupName][name]" target="_blank" class="text-slate-500 hover:text-primary flex items-center shrink-0 w-8 justify-center">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-full h-4">
+                                            <line x1="2" y1="12" x2="22" y2="12"/><polyline points="15 5 22 12 15 19"/>
+                                        </svg>
+                                    </a>
+
+                                    <input type="text" v-model="config[userId][groupName][name]" class="flex-1 bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs font-mono text-primary">
+                                    <button @click="deleteLink(userId, groupName, name)" class="text-slate-600 hover:text-red-400 px-1 opacity-0 group-hover/link:opacity-100 transition-opacity">×</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="fixed bottom-8 right-8 flex flex-col gap-2 z-50">
-            <button @click="scrollTo('top')" class="w-12 h-12 rounded-full bg-slate-800/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all shadow-2xl group">
-                <svg class="w-6 h-6 group-hover:-translate-y-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 15l7-7 7 7"/></svg>
-            </button>
-            <button @click="scrollTo('bottom')" class="w-12 h-12 rounded-full bg-slate-800/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all shadow-2xl group">
-                <svg class="w-6 h-6 group-hover:translate-y-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M19 9l-7 7-7-7"/></svg>
-            </button>
+        <div v-cloak class="fixed bottom-6 right-6 flex flex-col gap-2 z-50">
+            <button @click="scrollTo('top')" class="w-10 h-10 rounded-full bg-slate-800/60 backdrop-blur border border-white/10 flex items-center justify-center text-primary hover:bg-primary hover:text-white shadow-xl transition-all">↑</button>
+            <button @click="scrollTo('bottom')" class="w-10 h-10 rounded-full bg-slate-800/60 backdrop-blur border border-white/10 flex items-center justify-center text-primary hover:bg-primary hover:text-white shadow-xl transition-all">↓</button>
         </div>
     </div>
 
     <script>
         const SERVICE_URL = 'https://forever302free-h0d9bvemhaaffzhk.southeastasia-01.azurewebsites.net/api/nexus-handler?code=KD0qUaWPZgOBfzFbQtiZTfeluyK98b9w2iqpE1LLiiWNAzFuWJ2vfw==';
-
         const { createApp, ref, onMounted, watch } = Vue;
         createApp({
             setup() {
                 const config = ref({});
                 const newUserId = ref('');
                 const isSaving = ref(false);
-                const statusText = ref('Waking up server...'); // 优化初始显示
+                const statusText = ref('Waking up server...');
                 const statusColor = ref('bg-yellow-500');
                 const copyStatus = ref({});
                 let timer = null;
@@ -182,9 +141,9 @@
                         config.value = await res.json() || {};
                         statusText.value = 'Synced';
                         statusColor.value = 'bg-green-400';
-                    } catch (e) {
-                        statusText.value = 'Connect Error';
-                        statusColor.value = 'bg-red-500';
+                    } catch (e) { 
+                        statusText.value = 'Connect Error'; 
+                        statusColor.value = 'bg-red-500'; 
                     }
                 };
 
@@ -196,11 +155,10 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(config.value)
                         });
-                        statusText.value = 'Synced';
+                        statusText.value = 'Synced'; 
                         statusColor.value = 'bg-green-400';
-                    } catch (e) {
-                        statusText.value = 'Save Error';
-                        statusColor.value = 'bg-red-500';
+                    } catch (e) { 
+                        statusText.value = 'Save Error'; 
                     } finally { isSaving.value = false; }
                 };
 
@@ -212,14 +170,6 @@
                 const scrollTo = (t) => {
                     if (t === 'top') window.scrollTo({ top: 0, behavior: 'smooth' });
                     else window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-                };
-
-                const addUser = () => {
-                    const id = newUserId.value.trim();
-                    if (id && !config.value[id]) {
-                        config.value[id] = { 'root': { 'My Link': 'http://' } };
-                        newUserId.value = '';
-                    }
                 };
 
                 const getJumpUrl = (uid) => `${SERVICE_URL}&id=${uid}`;
@@ -235,9 +185,8 @@
                     timer = setTimeout(saveConfig, 2000);
                 }, { deep: true });
 
+                const addUser = () => { if (newUserId.value && !config.value[newUserId.value]) { config.value[newUserId.value] = { 'root': { 'My NAS': 'http://' } }; newUserId.value = ''; } };
                 const deleteUser = (id) => { if(confirm('Delete '+id+'?')) delete config.value[id]; };
-                const addGroup = (id) => config.value[id]['New Group'] = { 'Item': 'http://' };
-                const deleteGroup = (id, gn) => delete config.value[id][gn];
                 const addLink = (id, gn) => config.value[id][gn]['New Link'] = 'http://';
                 const deleteLink = (id, gn, ln) => delete config.value[id][gn][ln];
                 const renameUser = (o, n) => { if(n && !config.value[n]) { config.value[n] = config.value[o]; delete config.value[o]; }};
@@ -245,7 +194,7 @@
                 const renameLink = (id, gn, o, n) => { if(n && !config.value[id][gn][n]) { config.value[id][gn][n] = config.value[id][gn][o]; delete config.value[id][gn][o]; }};
 
                 onMounted(fetchConfig);
-                return { config, newUserId, isSaving, statusText, statusColor, copyStatus, saveConfig, addUser, deleteUser, addGroup, deleteGroup, addLink, deleteLink, renameUser, renameGroup, renameLink, copyLink, getJumpUrl, scrollTo, scrollToUser };
+                return { config, newUserId, isSaving, statusText, statusColor, copyStatus, saveConfig, addUser, deleteUser, addLink, deleteLink, renameUser, renameGroup, renameLink, copyLink, getJumpUrl, scrollTo, scrollToUser };
             }
         }).mount('#app');
     </script>
