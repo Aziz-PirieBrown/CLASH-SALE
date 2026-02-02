@@ -3,30 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus 嵌套配置管理</title>
+    <title>Nexus 静态配置管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 <body class="bg-slate-900 text-slate-200 min-h-screen p-4 md:p-8">
     <div id="app" class="max-w-4xl mx-auto">
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 bg-slate-800 p-6 rounded-2xl border border-slate-700">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-2xl">
             <div>
                 <h1 class="text-2xl font-bold text-white">Nexus <span class="text-sky-400">Static Editor</span></h1>
-                <p class="text-slate-400 text-sm mt-1">管理你的静态 JSON 路由库</p>
+                <p class="text-slate-500 text-xs mt-1">Repo: __REPO_OWNER__ / __REPO_NAME__</p>
             </div>
             <div class="flex gap-3 w-full md:w-auto">
-                <input type="password" v-model="token" placeholder="GitHub PAT" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500 flex-1">
-                <button @click="saveToGithub" :disabled="loading" class="px-6 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-all disabled:opacity-50 font-medium">
+                <input type="password" v-model="token" placeholder="输入 GitHub PAT (仅存本地)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500 flex-1 min-w-[200px]">
+                <button @click="saveToGithub" :disabled="loading || !token" class="px-6 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-all disabled:opacity-30 font-medium">
                     {{ loading ? '同步中...' : '提交更新' }}
                 </button>
             </div>
         </div>
 
-        <div class="space-y-8">
-            <div v-for="(userData, userId) in config" :key="userId" class="bg-slate-800 rounded-2xl p-6 border-l-4 border-sky-500 shadow-xl">
+        <div class="space-y-6">
+            <div v-for="(userData, userId) in config" :key="userId" class="bg-slate-800 rounded-2xl p-6 border-l-4 border-sky-500 shadow-lg">
                 <div class="flex justify-between items-center mb-6">
                     <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-sky-500 uppercase tracking-widest">ID:</span>
+                        <span class="text-xs font-bold text-sky-500 uppercase">ID:</span>
                         <input v-model="newKeys[userId]" @change="renameUserId(userId)" class="bg-transparent text-xl font-bold text-white focus:outline-none border-b border-transparent focus:border-sky-500">
                     </div>
                     <button @click="deleteUserId(userId)" class="text-rose-400 hover:text-rose-300 text-sm">删除 ID</button>
@@ -48,24 +48,20 @@
                             <button @click="addLink(userId, groupName)" class="text-xs text-sky-500 hover:text-sky-400 font-medium">+ 添加链接</button>
                         </div>
                     </div>
-                    <button @click="addGroup(userId)" class="w-full py-2 border border-dashed border-slate-700 rounded-lg text-xs text-slate-500 hover:border-sky-500 hover:text-sky-500">
-                        + 新增分组
-                    </button>
+                    <button @click="addGroup(userId)" class="w-full py-2 border border-dashed border-slate-700 rounded-lg text-xs text-slate-500 hover:border-sky-500 hover:text-sky-500">+ 新增分组</button>
                 </div>
             </div>
             
-            <button @click="addUserId" class="w-full py-6 border-2 border-dashed border-slate-700 rounded-2xl text-slate-500 hover:border-sky-500 hover:text-sky-500 transition-all text-lg font-medium">
-                + 创建全新跳转 ID
-            </button>
+            <button @click="addUserId" class="w-full py-6 border-2 border-dashed border-slate-700 rounded-2xl text-slate-500 hover:border-sky-500 hover:text-sky-500 transition-all text-lg font-medium">+ 创建全新跳转 ID</button>
         </div>
     </div>
 
     <script>
         const { createApp } = Vue;
-    // ✨ 这里的占位符必须跟 .yml 里的 sed 命令完全一致
-    const REPO_OWNER = "__REPO_OWNER__"; 
-    const REPO_NAME = "__REPO_NAME__";
-    const FILE_PATH = "config.json";
+        // 自动注入变量
+        const REPO_OWNER = "__REPO_OWNER__"; 
+        const REPO_NAME = "__REPO_NAME__";
+        const FILE_PATH = "config.json";
 
         createApp({
             data() {
@@ -76,17 +72,23 @@
                     sha: '', loading: false
                 }
             },
-            mounted() { this.fetchFromGithub(); },
+            watch: {
+                token(newVal) { localStorage.setItem('gh_pat', newVal); this.fetchFromGithub(); }
+            },
+            mounted() { if(this.token) this.fetchFromGithub(); },
             methods: {
                 async fetchFromGithub() {
+                    if(!this.token || this.token.includes("__")) return;
                     try {
-                        const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}?v=${Date.now()}`);
+                        const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}?v=${Date.now()}`;
+                        const res = await fetch(url, { headers: { 'Authorization': `token ${this.token}` } });
                         const data = await res.json();
-                        this.sha = data.sha;
-                        const content = JSON.parse(decodeURIComponent(escape(atob(data.content))));
-                        this.config = content;
-                        this.refreshKeys();
-                    } catch(e) { alert("配置加载失败，请检查仓库名和文件路径"); }
+                        if(res.status === 200) {
+                            this.sha = data.sha;
+                            this.config = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+                            this.refreshKeys();
+                        }
+                    } catch(e) { console.error("加载失败", e); }
                 },
                 refreshKeys() {
                     for (let u in this.config) {
@@ -99,57 +101,30 @@
                         }
                     }
                 },
-                addUserId() {
-                    const id = "new_user_" + Date.now().toString().slice(-4);
-                    this.config[id] = { "Group 1": { "Link 1": "https://" } };
-                    this.refreshKeys();
-                },
+                addUserId() { const id = "id_" + Math.random().toString(36).slice(-4); this.config[id] = { "分组 1": { "链接 1": "https://" } }; this.refreshKeys(); },
                 addGroup(u) { this.config[u]["新分组"] = { "新链接": "https://" }; this.refreshKeys(); },
                 addLink(u, g) { this.config[u][g]["新链接"] = "https://"; this.refreshKeys(); },
                 deleteUserId(u) { delete this.config[u]; },
                 deleteGroup(u, g) { delete this.config[u][g]; },
                 deleteLink(u, g, l) { delete this.config[u][g][l]; },
-                renameUserId(oldK) {
-                    const newK = this.newKeys[oldK];
-                    if (newK && newK !== oldK) {
-                        this.config[newK] = this.config[oldK];
-                        delete this.config[oldK];
-                        this.refreshKeys();
-                    }
-                },
-                renameGroup(u, oldG) {
-                    const newG = this.groupKeys[u + oldG];
-                    if (newG && newG !== oldG) {
-                        this.config[u][newG] = this.config[u][oldG];
-                        delete this.config[u][oldG];
-                        this.refreshKeys();
-                    }
-                },
-                renameLink(u, g, oldL) {
-                    const newL = this.linkKeys[u + g + oldL];
-                    if (newL && newL !== oldL) {
-                        this.config[u][g][newL] = this.config[u][g][oldL];
-                        delete this.config[u][g][oldL];
-                        this.refreshKeys();
-                    }
-                },
+                renameUserId(oldK) { const newK = this.newKeys[oldK]; if (newK && newK !== oldK) { this.config[newK] = this.config[oldK]; delete this.config[oldK]; this.refreshKeys(); } },
+                renameGroup(u, oldG) { const newG = this.groupKeys[u + oldG]; if (newG && newG !== oldG) { this.config[u][newG] = this.config[u][oldG]; delete this.config[u][oldG]; this.refreshKeys(); } },
+                renameLink(u, g, oldL) { const newL = this.linkKeys[u + g + oldL]; if (newL && newL !== oldL) { this.config[u][g][newL] = this.config[u][g][oldL]; delete this.config[u][g][oldL]; this.refreshKeys(); } },
                 async saveToGithub() {
-                    if (!this.token) return alert("请输入 Token");
                     this.loading = true;
-                    localStorage.setItem('gh_pat', this.token);
-                    const content = btoa(unescape(encodeURIComponent(JSON.stringify(this.config, null, 2))));
                     try {
+                        const content = btoa(unescape(encodeURIComponent(JSON.stringify(this.config, null, 2))));
                         const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
                             method: 'PUT',
                             headers: { 'Authorization': `token ${this.token}`, 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ message: "Update config", content, sha: this.sha })
+                            body: JSON.stringify({ message: "Update config via Manager", content, sha: this.sha })
                         });
                         if (res.ok) {
                             const data = await res.json();
                             this.sha = data.content.sha;
-                            alert("更新成功！部署大约需要 30-60 秒。");
-                        } else { throw new Error("保存失败，请检查 Token 权限"); }
-                    } catch (e) { alert(e.message); }
+                            alert("✅ 更新成功！稍后请访问 goo.html 测试。");
+                        } else { alert("❌ 保存失败，请检查 Token 权限。"); }
+                    } catch (e) { alert("网络错误"); }
                     this.loading = false;
                 }
             }
