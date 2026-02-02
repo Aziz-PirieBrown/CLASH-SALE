@@ -13,7 +13,7 @@
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         
-        /* 强力去除浏览器干预样式 */
+        /* 强力去除 Edge/Chrome 深色模式表单干预 */
         input { 
             border: none !important; 
             outline: none !important; 
@@ -37,14 +37,15 @@
         <header class="bg-card border border-border rounded-xl p-6 mb-6 shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
                 <h1 class="text-xl sm:text-2xl font-bold text-white uppercase tracking-tight">NEXUS <span class="text-primary">GITHUB</span></h1>
-                <p class="text-slate-500 text-[10px] font-mono mt-1 uppercase">Repo: __REPO_OWNER__ / __REPO_NAME__</p>
+                <p class="text-slate-500 text-[10px] font-mono mt-1 uppercase text-center md:text-left">Repo: __REPO_OWNER__ / __REPO_NAME__</p>
             </div>
             <div class="flex gap-3 w-full md:w-auto">
                 <input type="password" v-model="token" placeholder="GitHub PAT (Local Only)" 
                        class="bg-slate-900 rounded-lg px-3 py-2 text-sm text-primary focus:bg-slate-950 transition-all flex-1 min-w-[200px]">
                 <button @click="saveToGithub" :disabled="loading || !token" 
-                        class="px-6 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-all disabled:opacity-30 font-bold whitespace-nowrap">
-                    {{ loading ? 'SYNCING...' : 'COMMIT' }}
+                        :class="saveStatus ? 'bg-green-600' : 'bg-sky-600 hover:bg-sky-500'"
+                        class="px-6 py-2 text-white rounded-lg transition-all disabled:opacity-30 font-bold whitespace-nowrap">
+                    {{ loading ? 'SYNCING...' : (saveStatus ? 'SUCCESS ✅' : 'COMMIT') }}
                 </button>
             </div>
         </header>
@@ -64,12 +65,23 @@
             <div class="lg:col-span-8 space-y-6">
                 <div v-for="(userData, userId) in config" :key="userId" class="bg-card border border-border rounded-xl p-6 shadow-lg relative mb-6">
                     
-                    <div class="flex flex-col gap-3 mb-6 pb-4 border-b border-white/5">
+                    <div class="flex flex-col gap-3 mb-6">
                         <div class="flex items-center justify-between w-full">
-                            <input type="text" :value="userId" @change="renameUser(userId, $event.target.value)" 
-                                   class="h-10 px-3 rounded bg-slate-800 font-bold text-primary text-sm uppercase outline-none w-full max-w-[240px] text-left truncate shadow-inner">
+                            <div class="flex items-center gap-3 flex-1 min-w-0">
+                                <input type="text" :value="userId" @change="renameUser(userId, $event.target.value)" 
+                                       class="h-10 px-3 rounded bg-slate-800 font-bold text-primary text-sm uppercase outline-none w-full max-w-[240px] text-left truncate shadow-inner">
+                            </div>
                             <button @click="deleteUser(userId)" class="p-2 text-slate-500 hover:text-red-400 transition-colors">
                                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </div>
+                        
+                        <div class="flex items-center justify-center gap-2 py-1">
+                            <a :href="getJumpUrl(userId)" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 truncate transition-colors">🔗 ?id={{ userId }}</a>
+                            <button @click="copyEndpoint(userId)" class="p-1.5 text-slate-500 hover:text-primary transition-colors bg-slate-800/50 rounded ml-1">
+                                <svg class="w-4 h-4" :class="{'text-green-400': copyStatus[userId]}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path v-if="!copyStatus[userId]" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /><path v-else d="M5 13l4 4L19 7" />
+                                </svg>
                             </button>
                         </div>
                     </div>
@@ -78,11 +90,11 @@
                         <div v-for="(links, groupName) in userData" :key="groupName" class="bg-slate-900/50 rounded-lg p-4 border border-slate-800/30">
                             <div class="flex justify-between items-center mb-3 border-b border-white/5 pb-2">
                                 <input type="text" :value="groupName" @change="renameGroup(userId, groupName, $event.target.value)" 
-                                       class="bg-transparent text-xs font-bold text-slate-400 uppercase w-1/3 focus:text-primary font-mono">
+                                       class="bg-transparent text-xs font-bold text-slate-400 uppercase w-1/3 outline-none focus:text-primary font-mono">
                                 <div class="flex items-center gap-2">
                                     <button @click="toggleGroupProtocol(userId, groupName)" 
                                             :class="getGroupStatusClass(links)"
-                                            class="px-2 py-0.5 font-bold text-[9px] rounded border transition-all uppercase">
+                                            class="px-2 py-0.5 font-bold text-[9px] rounded border transition-all hover:bg-white/5 uppercase">
                                         {{ getGroupStatusLabel(links) }}
                                     </button>
                                     <button @click="addLink(userId, groupName)" class="text-[11px] bg-slate-800 px-2 py-0.5 rounded text-slate-400 hover:text-white transition-all">+🔗</button>
@@ -101,7 +113,12 @@
                                         <input type="text" :value="name" @change="renameLink(userId, groupName, name, $event.target.value)" 
                                                class="w-24 shrink-0 bg-slate-900 rounded px-2 py-1 text-xs text-slate-300 font-mono" style="min-width: 90px;">
                                         <a :href="url" target="_blank" class="text-slate-500 hover:text-primary px-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-4 h-4"><line x1="2" y1="12" x2="22" y2="12"/><polyline points="15 5 22 12 15 19"/></svg></a>
-                                        <button @click="copyText(url)" class="p-1 text-slate-500 hover:text-primary"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                                        <button @click="copyItem(url, userId, groupName, name)" class="p-1 text-slate-500 hover:text-primary transition-colors">
+                                            <svg class="w-4 h-4" :class="{'text-green-400': copyItemStatus[userId+groupName+name]}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path v-if="!copyItemStatus[userId+groupName+name]" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                <path v-else d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </button>
                                         <div class="flex-1 sm:hidden"></div>
                                         <button @click="deleteLink(userId, groupName, name)" class="text-slate-600 hover:text-red-400 font-bold text-sm px-1 sm:hidden">×</button>
                                     </div>
@@ -120,9 +137,11 @@
 
     <script>
         const { createApp, ref, onMounted, watch } = Vue;
+        // 配置信息
         const REPO_OWNER = "__REPO_OWNER__"; 
         const REPO_NAME = "__REPO_NAME__";
         const FILE_PATH = "config.json";
+        const PUBLIC_ENTRY = "https://yellow-sea-0466b3200.6.azurestaticapps.net/go.html";
 
         createApp({
             setup() {
@@ -130,7 +149,10 @@
                 const token = ref(localStorage.getItem('gh_pat') || '');
                 const sha = ref('');
                 const loading = ref(false);
+                const saveStatus = ref(false);
                 const newIdInput = ref('');
+                const copyStatus = ref({});
+                const copyItemStatus = ref({});
 
                 const stripProtocol = (url) => url.replace(/^https?:\/\//, '');
 
@@ -181,10 +203,11 @@
                         if (res.ok) {
                             const data = await res.json();
                             sha.value = data.content.sha;
-                            config.value = processed; // 更新本地显示为重排后的
-                            alert("✅ Sync Success!");
-                        } else { alert("❌ Auth Failed. Check Token."); }
-                    } catch (e) { alert("Network Error"); }
+                            config.value = processed;
+                            saveStatus.value = true;
+                            setTimeout(() => saveStatus.value = false, 3000);
+                        }
+                    } catch (e) {}
                     loading.value = false;
                 };
 
@@ -213,36 +236,45 @@
 
                 const getGroupStatusLabel = (links) => Object.values(links).every(u => u.startsWith('https')) ? 'HTTPS' : 'HTTP';
 
-                const addUserId = () => {
-                    if (newIdInput.value && !config.value[newIdInput.value]) {
-                        config.value[newIdInput.value] = { 'Group 1': { 'Link 1': 'https://' } };
-                        newIdInput.value = '';
+                const doCopy = (text, type, key) => {
+                    const area = document.createElement("textarea"); area.value = text;
+                    area.style.position = "fixed"; area.style.left = "-9999px";
+                    document.body.appendChild(area); area.focus(); area.select();
+                    if (document.execCommand('copy')) {
+                        if (type === 'endpoint') {
+                            copyStatus.value[key] = true;
+                            setTimeout(() => copyStatus.value[key] = false, 2000);
+                        } else {
+                            copyItemStatus.value[key] = true;
+                            setTimeout(() => copyItemStatus.value[key] = false, 2000);
+                        }
                     }
+                    document.body.removeChild(area);
                 };
 
-                const addGroup = (u) => { config.value[u][`New Group ${Date.now()}`] = { 'Link 1': 'https://' }; };
-                const addLink = (u, g) => { config.value[u][g][`New Link ${Date.now()}`] = 'https://'; };
-                const deleteUser = (u) => { if(confirm(`Delete ${u}?`)) delete config.value[u]; };
+                const getJumpUrl = (uid) => `${PUBLIC_ENTRY}?id=${uid}`;
+                const copyEndpoint = (uid) => doCopy(getJumpUrl(uid), 'endpoint', uid);
+                const copyItem = (url, u, g, l) => doCopy(url, 'item', u + g + l);
+
+                const addUserId = () => { if (newIdInput.value && !config.value[newIdInput.value]) { config.value[newIdInput.value] = { 'Group 1': { 'Link 1': 'https://' } }; newIdInput.value = ''; } };
+                const addGroup = (u) => { config.value[u][`NewGroup_${Date.now()}`] = { 'Link 1': 'https://' }; };
+                const addLink = (u, g) => { config.value[u][g][`NewLink_${Date.now()}`] = 'https://'; };
+                const deleteUser = (u) => { if(confirm(`Delete ID: ${u}?`)) delete config.value[u]; };
                 const deleteGroup = (u, g) => delete config.value[u][g];
                 const deleteLink = (u, g, l) => delete config.value[u][g][l];
-
                 const renameUser = (o, n) => { if(n && !config.value[n]) { config.value[n] = config.value[o]; delete config.value[o]; } };
                 const renameGroup = (u, o, n) => { if(n && !config.value[u][n]) { config.value[u][n] = config.value[u][o]; delete config.value[u][o]; } };
                 const renameLink = (u, g, o, n) => { if(n && !config.value[u][g][n]) { config.value[u][g][n] = config.value[u][g][o]; delete config.value[u][g][o]; } };
-
-                const copyText = (text) => {
-                    navigator.clipboard.writeText(text);
-                    alert("Copied: " + text);
-                };
 
                 watch(token, (v) => { localStorage.setItem('gh_pat', v); fetchFromGithub(); });
                 onMounted(fetchFromGithub);
 
                 return { 
-                    config, token, loading, newIdInput, saveToGithub, addUserId, addGroup, addLink, 
+                    config, token, loading, saveStatus, newIdInput, copyStatus, copyItemStatus,
+                    saveToGithub, addUserId, addGroup, addLink, 
                     deleteUser, deleteGroup, deleteLink, renameUser, renameGroup, renameLink,
                     stripProtocol, updateUrl, toggleSingleProtocol, toggleGroupProtocol, 
-                    getGroupStatusClass, getGroupStatusLabel, copyText
+                    getGroupStatusClass, getGroupStatusLabel, getJumpUrl, copyEndpoint, copyItem
                 };
             }
         }).mount('#app');
