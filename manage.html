@@ -53,7 +53,7 @@
 
             <div class="flex-1 w-full md:max-w-md flex items-center gap-2 bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 focus-within:border-primary/50 transition-colors">
                 <i class="fas fa-key text-slate-500 ml-2 text-xs"></i>
-                <input type="password" v-model="tokenInput" @change="saveToken" placeholder="ÔÚ´ËÊäÈë GitHub Token (½öÐèÒ»´Î)" class="w-full bg-transparent text-sm text-white px-2 placeholder-slate-600 font-mono">
+                <input type="password" v-model="tokenInput" @change="saveToken" placeholder="GitHub Token (ÊäÈëÒ»´Î×Ô¶¯±£´æ)" class="w-full bg-transparent text-sm text-white px-2 placeholder-slate-600 font-mono">
             </div>
 
             <button v-cloak @click="manualSync" :disabled="isSaving || !tokenInput" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-bold text-sm shadow-lg shrink-0 flex items-center gap-2">
@@ -87,8 +87,8 @@
             <div class="lg:col-span-8 space-y-6">
                 <div v-for="(userGroups, userId) in config" :key="userId" :id="'user-'+userId" class="bg-card border border-border rounded-xl p-6 shadow-lg relative transition-all mb-6">
                     
-                    <div class="flex flex-col gap-3 mb-6">
-                        <div class="flex items-center justify-between w-full">
+                    <div class="flex flex-col gap-4 mb-6">
+                        <div class="flex items-center justify-between w-full border-b border-white/5 pb-2">
                             <div class="flex items-center gap-3 flex-1 min-w-0">
                                 <i class="fas fa-id-badge text-slate-500 text-xl"></i>
                                 <input type="text" :value="userId" @change="renameUser(userId, $event.target.value)" 
@@ -99,12 +99,15 @@
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>
-                        <div class="flex items-center gap-2 py-1 pl-1">
-                            <a :href="getJumpUrl(userId)" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 truncate transition-colors flex items-center gap-1 bg-blue-500/10 px-2 py-1 rounded">
-                                <i class="fas fa-link"></i> ?id={{ userId }}
+                        
+                        <div class="flex flex-col items-center justify-center gap-2 py-4 bg-slate-900/30 rounded-xl border border-white/5 border-dashed">
+                            <a :href="getJumpUrl(userId)" target="_blank" class="text-lg font-mono text-blue-400 hover:text-blue-300 transition-all transform hover:scale-105 flex items-center gap-2 px-6 py-2 bg-blue-500/10 rounded-full border border-blue-500/20 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/20">
+                                <i class="fas fa-rocket"></i>
+                                <span>?id={{ userId }}</span>
                             </a>
-                            <button @click="copyEndpoint(userId)" class="p-1.5 text-slate-500 hover:text-primary transition-colors bg-slate-800/50 rounded ml-1 w-8 h-8 flex items-center justify-center">
-                                <i class="fas" :class="copyStatus[userId] ? 'fa-check text-green-400' : 'fa-copy'"></i>
+                            <button @click="copyEndpoint(userId)" class="text-xs text-slate-500 hover:text-primary transition-colors flex items-center gap-1 mt-1">
+                                <i class="fas" :class="copyStatus[userId] ? 'fa-check text-green-400' : 'fa-copy'"></i> 
+                                {{ copyStatus[userId] ? 'Copied' : 'Copy Link' }}
                             </button>
                         </div>
                     </div>
@@ -115,7 +118,7 @@
                                 <div class="flex items-center gap-2 flex-1">
                                     <i class="fas fa-folder text-slate-600 text-xs"></i>
                                     <input type="text" :value="groupName" @change="renameGroup(userId, groupName, $event.target.value)" 
-                                           class="bg-transparent text-xs font-bold text-slate-400 uppercase w-full outline-none focus:text-primary font-mono">
+                                           class="bg-transparent text-xs font-bold text-slate-400 uppercase w-full outline-none focus:text-primary font-mono placeholder-slate-600">
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <button @click="toggleGroupProtocol(userId, groupName)" 
@@ -123,8 +126,8 @@
                                             class="px-2 py-0.5 font-bold text-[9px] rounded border transition-all hover:bg-white/5 uppercase">
                                         {{ getGroupStatusLabel(links) }}
                                     </button>
-                                    <button @click="addLink(userId, groupName)" :disabled="Object.keys(links).length >= 10" class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-400 hover:text-white transition-all disabled:opacity-20 flex items-center gap-1">
-                                        <i class="fas fa-plus"></i> {{ Object.keys(links).length >= 10 ? 'MAX' : 'Link' }}
+                                    <button @click="addLink(userId, groupName)" :disabled="Object.keys(links).length >= 20" class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-400 hover:text-white transition-all disabled:opacity-20 flex items-center gap-1">
+                                        <i class="fas fa-plus"></i> Link
                                     </button>
                                     <button @click="deleteGroup(userId, groupName)" class="w-6 h-6 flex items-center justify-center text-slate-600 hover:text-rose-400 transition-colors">
                                         <i class="fas fa-times"></i>
@@ -132,7 +135,7 @@
                                 </div>
                             </div>
 
-                            <div class="space-y-4 sm:space-y-2">
+                            <div class="space-y-2">
                                 <div v-for="(url, name) in links" :key="name" class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-1 group/item">
                                     <div class="flex items-center gap-1 w-full sm:w-auto">
                                         <button @click="toggleSingleProtocol(userId, groupName, name)" 
@@ -163,7 +166,7 @@
                                 </div>
                             </div>
                         </div>
-                        <button @click="addGroup(userId)" :disabled="Object.keys(userGroups).length >= 10" class="w-full py-2 border border-dashed border-slate-700 text-slate-500 hover:text-primary hover:border-primary rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-20 flex items-center justify-center gap-2">
+                        <button @click="addGroup(userId)" :disabled="Object.keys(userGroups).length >= 20" class="w-full py-2 border border-dashed border-slate-700 text-slate-500 hover:text-primary hover:border-primary rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-20 flex items-center justify-center gap-2">
                             <i class="fas fa-layer-group"></i> New Group
                         </button>
                     </div>
@@ -187,20 +190,19 @@
     </div>
 
     <script>
-        // === GitHub ÅäÖÃ (Õ¼Î»·û) ===
+        // === ºËÐÄÅäÖÃ ===
         const OWNER = '__REPO_OWNER__';
         const REPO = '__REPO_NAME__';
         const PATH = 'config.json';
         
-        // Ìø×ªÓòÃû
-        const PUBLIC_DOMAIN = 'https://yellow-sea-0466b3200.6.azurestaticapps.net/go.html';
+        // Á´½ÓÐÞÕý
+        const PUBLIC_DOMAIN = 'https://yellow-sea-0466b3200.6.azurestaticapps.net/goo.html';
         const CACHE_TOKEN_KEY = 'NEXUS_GH_TOKEN_V2';
         
         const { createApp, ref, onMounted, watch } = Vue;
         
         createApp({
             setup() {
-                // ×´Ì¬¶¨Òå
                 const config = ref({});
                 const newUserId = ref('');
                 const isSaving = ref(false);
@@ -212,15 +214,61 @@
                 let currentSha = '';
                 let timer = null;
 
-                // --- ºËÐÄ£ºÊý¾Ý»ñÈ¡ ---
+                // --- ºËÐÄ£º¸ÄÃû²»ÅÜÎ» (In-Place Rename) ---
+                // Õâ¸öº¯ÊýÄÜ±£Ö¤¸ÄÃûÊ±£¬KeyµÄÎ»ÖÃ²»¶¯
+                const renameKeyInOrder = (obj, oldKey, newKey) => {
+                    if (oldKey === newKey) return obj;
+                    const newObj = {};
+                    Object.keys(obj).forEach(key => {
+                        if (key === oldKey) {
+                            newObj[newKey] = obj[key]; // Ô­µØÌæ»»
+                        } else {
+                            newObj[key] = obj[key];
+                        }
+                    });
+                    return newObj;
+                };
+
+                // --- ºËÐÄ£º×Ô¶¯ÇåÀí (Auto Cleanup) ---
+                // Ö»É¾¿ÕµÄ£¬²»¸ÄÃû£¬²»ÅÅÐò
+                const sanitize = (data) => {
+                    const cleanData = {};
+                    // ±éÀúÓÃ»§
+                    Object.keys(data).forEach(userId => {
+                        const groups = data[userId];
+                        const cleanGroups = {};
+                        // ±éÀú×é
+                        Object.keys(groups).forEach(groupName => {
+                            const links = groups[groupName];
+                            const cleanLinks = {};
+                            // ±éÀúÁ´½Ó
+                            Object.keys(links).forEach(linkName => {
+                                let url = links[linkName] ? links[linkName].trim() : '';
+                                // Ö»±£Áô·Ç¿ÕÁ´½Ó
+                                if (url && url !== 'https://' && url !== 'http://') {
+                                    cleanLinks[linkName] = url;
+                                }
+                            });
+                            // Ö»±£Áô·Ç¿Õ×é
+                            if (Object.keys(cleanLinks).length > 0) {
+                                cleanGroups[groupName] = cleanLinks;
+                            }
+                        });
+                        // Ö»±£Áô·Ç¿ÕÓÃ»§
+                        if (Object.keys(cleanGroups).length > 0) {
+                            cleanData[userId] = cleanGroups;
+                        }
+                    });
+                    return cleanData;
+                };
+
+                // --- GitHub API ---
                 const fetchConfig = async () => {
                     if (!tokenInput.value) {
                         statusText.value = 'Input Token'; statusColor.value = 'bg-yellow-500';
                         return;
                     }
-                    
                     statusText.value = 'Syncing...'; statusColor.value = 'bg-blue-500';
-                    
                     try {
                         const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}?t=${Date.now()}`;
                         const res = await fetch(url, { headers: { 'Authorization': `token ${tokenInput.value}` } });
@@ -234,26 +282,25 @@
                         } else {
                             const json = await res.json();
                             currentSha = json.sha;
-                            // ½âÂë UTF-8 ÄÚÈÝ
                             const content = decodeURIComponent(escape(atob(json.content)));
-                            config.value = cleanupAndReorder(JSON.parse(content));
+                            config.value = JSON.parse(content); 
                             statusText.value = 'Synced'; statusColor.value = 'bg-green-400';
                         }
                     } catch (e) { 
-                        statusText.value = 'Error'; 
-                        statusColor.value = 'bg-red-500'; 
-                        console.error(e);
+                        statusText.value = 'Error'; statusColor.value = 'bg-red-500'; 
                     }
                 };
 
-                // --- ºËÐÄ£º±£´æÊý¾Ý ---
                 const saveConfig = async () => {
                     if (!tokenInput.value) return;
                     isSaving.value = true;
                     statusText.value = 'Pushing...';
                     
                     try {
-                        const contentStr = JSON.stringify(config.value, null, 2);
+                        // ±£´æÇ°Ö´ÐÐÇåÀí (Auto Cleanup)
+                        const cleanData = sanitize(config.value);
+                        
+                        const contentStr = JSON.stringify(cleanData, null, 2);
                         const contentB64 = btoa(unescape(encodeURIComponent(contentStr)));
                         
                         const body = {
@@ -277,18 +324,16 @@
                         currentSha = resJson.content.sha;
                         statusText.value = 'Synced'; statusColor.value = 'bg-green-400';
                     } catch (e) { 
-                        statusText.value = 'Save Error'; 
-                        statusColor.value = 'bg-red-500';
+                        statusText.value = 'Save Error'; statusColor.value = 'bg-red-500';
                     } finally { 
                         isSaving.value = false; 
                     }
                 };
 
-                // ±£´æ Token µ½±¾µØ
                 const saveToken = () => {
                     if (tokenInput.value) {
                         localStorage.setItem(CACHE_TOKEN_KEY, tokenInput.value);
-                        fetchConfig(); // Token ±ä»¯Ê±Á¢¼´Ë¢ÐÂ
+                        fetchConfig(); 
                     }
                 };
                 
@@ -297,31 +342,7 @@
                      else saveConfig();
                 }
 
-                // --- Êý¾Ý´¦Àí¹¤¾ß ---
-                const cleanupAndReorder = (data) => {
-                    const cleanData = JSON.parse(JSON.stringify(data));
-                    for (const userId in cleanData) {
-                        const groups = cleanData[userId];
-                        const newGroups = {};
-                        let gCount = 1;
-                        Object.keys(groups).forEach(gKey => {
-                            const links = groups[gKey];
-                            const newLinks = {};
-                            let lCount = 1;
-                            Object.keys(links).forEach(lKey => {
-                                const url = links[lKey].trim();
-                                if (url && !['https://','http://','https','http'].includes(url)) {
-                                    newLinks[`Link ${lCount++}`] = url;
-                                }
-                            });
-                            if (Object.keys(newLinks).length > 0) newGroups[`Group ${gCount++}`] = newLinks;
-                        });
-                        cleanData[userId] = newGroups;
-                    }
-                    return cleanData;
-                };
-
-                // --- UI ½»»¥ ---
+                // --- ½»»¥Âß¼­ ---
                 const stripProtocol = (url) => url.replace(/^https?:\/\//, '');
                 const updateUrl = (id, gn, ln, val) => {
                     const prefix = config.value[id][gn][ln].startsWith('https') ? 'https://' : 'http://';
@@ -360,31 +381,58 @@
                     doCopy(url, () => { copyItemStatus.value[key] = true; setTimeout(() => copyItemStatus.value[key] = false, 2000); });
                 };
 
-                const addUser = () => { if (newUserId.value && !config.value[newUserId.value]) { config.value[newUserId.value] = { 'Group 1': { 'Link 1': 'https://' } }; newUserId.value = ''; } };
+                // --- CRUD ---
+                const addUser = () => { 
+                    if (newUserId.value && !config.value[newUserId.value]) { 
+                        config.value[newUserId.value] = { 'My Group': { 'Google': 'https://google.com' } }; 
+                        newUserId.value = ''; 
+                    } 
+                };
                 const deleteUser = (id) => { if(confirm('É¾³ýÓÃ»§: '+id+'?')) delete config.value[id]; };
-                const addGroup = (id) => { const c = Object.keys(config.value[id]).length; if (c < 10) config.value[id][`Group ${c+1}`] = { 'Link 1': 'https://' }; };
-                const addLink = (id, gn) => { const c = Object.keys(config.value[id][gn]).length; if (c < 10) config.value[id][gn][`Link ${c+1}`] = 'https://'; };
+                
+                // ÐÂ½¨Ê±Ê¹ÓÃËæ»úºó×º·À³åÍ»£¬µ«ÔÊÐíÓÃ»§¸ÄÃû
+                const addGroup = (id) => { 
+                    const name = `Group ${Date.now().toString().slice(-4)}`;
+                    config.value[id][name] = { 'New Link': 'https://' }; 
+                };
+                const addLink = (id, gn) => { 
+                    const name = `Link ${Date.now().toString().slice(-4)}`;
+                    config.value[id][gn][name] = 'https://'; 
+                };
                 const deleteGroup = (id, gn) => { delete config.value[id][gn]; };
                 const deleteLink = (id, gn, ln) => { delete config.value[id][gn][ln]; };
-                const renameUser = (o, n) => { if(n && !config.value[n]) { config.value[n] = config.value[o]; delete config.value[o]; }};
-                const renameGroup = (id, o, n) => { if(n && !config.value[id][n]) { config.value[id][n] = config.value[id][o]; delete config.value[id][o]; }};
-                const renameLink = (id, gn, o, n) => { if(n && !config.value[id][gn][n]) { config.value[id][gn][n] = config.value[id][gn][o]; delete config.value[id][gn][o]; }};
+                
+                // ¸ÄÃû²»ÅÜÎ»Âß¼­Ó¦ÓÃ
+                const renameUser = (oldName, newName) => { 
+                    if(newName && !config.value[newName]) { 
+                        config.value = renameKeyInOrder(config.value, oldName, newName);
+                    }
+                };
+                const renameGroup = (id, oldName, newName) => { 
+                    if(newName && !config.value[id][newName]) { 
+                        config.value[id] = renameKeyInOrder(config.value[id], oldName, newName);
+                    }
+                };
+                const renameLink = (id, gn, oldName, newName) => { 
+                    if(newName && !config.value[id][gn][newName]) { 
+                        config.value[id][gn] = renameKeyInOrder(config.value[id][gn], oldName, newName);
+                    }
+                };
+                
                 const scrollToUser = (id) => { const el = document.getElementById('user-' + id); if (el) window.scrollTo({ top: el.offsetTop - 20, behavior: 'smooth' }); };
                 const scrollTo = (t) => { if (t === 'top') window.scrollTo({ top: 0, behavior: 'smooth' }); else window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); };
 
-                // ×Ô¶¯±£´æ´¥·¢Æ÷
                 watch(config, () => {
                     clearTimeout(timer);
                     if(statusText.value === 'Synced') statusText.value = 'Modified...';
-                    timer = setTimeout(saveConfig, 2000); // 2Ãë·À¶¶×Ô¶¯±£´æ
+                    timer = setTimeout(saveConfig, 2000);
                 }, { deep: true });
 
-                // ³õÊ¼»¯
                 onMounted(() => {
                     const cachedToken = localStorage.getItem(CACHE_TOKEN_KEY);
                     if (cachedToken) {
-                        tokenInput.value = cachedToken; // Ìî³ä Token
-                        fetchConfig(); // Á¢¼´Í¬²½
+                        tokenInput.value = cachedToken;
+                        fetchConfig();
                     }
                 });
 
