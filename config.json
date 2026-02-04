@@ -28,5 +28,10 @@
       "Link 1": "https://123123",
       "Link 2": "https://ASDFSFDSFD"
     }
+  },
+  "admin": {
+    "Default": {
+      "Home": "http://192.168.130.183:34832/wewewe/"
+    }
   }
 }
