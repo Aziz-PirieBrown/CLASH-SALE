@@ -1,0 +1,77 @@
+# --------------------------------------------------
+# 1. 节点列表 (Proxies) - 您的2个节点
+# ---------------------------------------------------
+proxies:
+  - name: "17428-vless-reality-vision"
+    type: vless
+    server: 157.230.133.119
+    port: 17428
+    uuid: 896410e2-a52b-4c2a-a7bd-e0fca61cf2f4
+    network: tcp
+    tls: true
+    udp: true
+    servername: learn.microsoft.com
+    client-fingerprint: chrome
+    flow: xtls-rprx-vision
+    reality-opts:
+      public-key: J9d0ZvIvVh69vyAMAuRVBkkUGSfpr975Srz1nptBIGg
+      short-id: d29cd667
+
+  - name: "17429-vless-reality-vision"
+    type: vless
+    server: 157.230.133.119
+    port: 17429
+    uuid: 62234233-5151-4004-c58c-ea1d4047f6bc
+    network: tcp
+    tls: true
+    udp: true
+    servername: learn.microsoft.com
+    client-fingerprint: chrome
+    flow: xtls-rprx-vision
+    reality-opts:
+      public-key: rdFMPyHEBPsPomWbUSqUT2mcOzivcRPtGL7lj_TBHw0
+      short-id: 7cf26d7a
+
+# ---------------------------------------------------
+# 2. 策略组 (Proxy Groups) - 原样+新增直连
+# ---------------------------------------------------
+proxy-groups:
+  # 原有Proxy组（不变）
+  - name: Proxy
+    type: select
+    proxies:
+      - 17428-vless-reality-vision
+      - 17429-vless-reality-vision
+
+  # 新增：独立直连组（偶尔切换用）
+  - name: "直连"
+    type: select
+    proxies:
+      - DIRECT
+
+# ---------------------------------------------------
+# 3. 规则 (Rules) - 原样不变
+# ---------------------------------------------------
+rules:
+  # AI服务强制走Proxy组
+  - DOMAIN-SUFFIX,perplexity.ai,Proxy
+  - DOMAIN-SUFFIX,pplx-api,Proxy
+  - DOMAIN-KEYWORD,perplexity,Proxy
+  - DOMAIN-SUFFIX,openai.com,Proxy
+  - DOMAIN-SUFFIX,chatgpt.com,Proxy
+
+  # SAVO/国内直连
+  - DOMAIN-SUFFIX,savo.xyz,DIRECT
+  - DOMAIN-SUFFIX,qq.com,DIRECT
+  - DOMAIN-SUFFIX,azure.cn,DIRECT
+  - DOMAIN-SUFFIX,microsoft.com,DIRECT
+
+  # 本地直连
+  - IP-CIDR,0.0.0.0/8,DIRECT
+  - IP-CIDR,10.0.0.0/8,DIRECT
+  - IP-CIDR,127.0.0.0/8,DIRECT
+  - IP-CIDR,172.16.0.0/12,DIRECT
+  - IP-CIDR,192.168.0.0/16,DIRECT
+
+  # 兜底：原有Proxy组
+  - MATCH,Proxy
